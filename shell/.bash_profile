@@ -7,9 +7,12 @@ export READER="mupdf"
 # Java application
 export _JAVA_AWT_WM_NONREPARENTING=1 
 export AWT_TOOLKIT=MToolkit
+export ANDROID_HOME="$HOME/Android/Sdk"
 
 # Clean up path
 export PATH=\
+$ANDROID_HOME/platform-tools:\
+$ANDROID_HOME/tools:\
 $HOME/.local/bin:\
 $HOME/.yarn/bin:\
 /usr/local/sbin:\
@@ -37,4 +40,6 @@ export FZF_DEFAULT_OPTS='--height 20%'
 # ~/.bash_profile
 #
 [[ -f ~/.bashrc ]] && . ~/.bashrc
+
+
 
