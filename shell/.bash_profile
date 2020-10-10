@@ -25,12 +25,12 @@ export FZF_DEFAULT_OPTS='--height 20%'
 
 # Clean up path
 export PATH=\
+$HOME/.yarn/bin:\
 $JAVA_HOME/bin:\
 $ANDROID_HOME/platform-tools:\
 $ANDROID_HOME/emulator:\
 $ANDROID_HOME/tools:\
 $HOME/.local/bin:\
-$HOME/.yarn/bin:\
 /usr/local/sbin:\
 /usr/local/bin:\
 /usr/sbin:\
