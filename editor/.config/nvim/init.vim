@@ -1,9 +1,8 @@
 set nocompatible
-let mapleader = "\<Space>"
 
 " Install vim-plug if not found
-if empty(glob('~/.vim/autoload/plug.vim'))
-  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+if empty(glob('~/.local/share/nvim/site/autoload'))
+  silent !curl -fLo ~/.local/share/nvim/site/autoload --create-dirs
     \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
@@ -152,9 +151,9 @@ set shortmess+=c " don't give |ins-completion-menu| messages.
 " Verbose: set listchars=nbsp:¬,eol:¶,extends:»,precedes:«,trail:•
 set listchars=nbsp:¬,extends:»,precedes:«,trail:•
 
-" save
+" Key remapping
+let mapleader = "\<Space>"
 nmap <leader>w :w<CR>
-
 map <C-p> :Files<CR>
 noremap <leader>g :Rg<Space>
 
