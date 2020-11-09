@@ -12,13 +12,8 @@
   algorithm = patience
   compactionHeuristic = true
 [merge]
-  tool = vimdiff
+  tool = nvim -d
   conflictstyle = diff3
-[mergetool]
-  prompt = true
-  keepBackup = false
-[mergetool "vimdiff"]
-  cmd = nvim -d $BASE $LOCAL $REMOTE $MERGED -c '$wincmd w' -c 'wincmd J'
 [alias]
   c = commit
   co = checkout
