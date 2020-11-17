@@ -191,6 +191,10 @@ inoremap <down> <nop>
 inoremap <left> <nop>
 inoremap <right> <nop>
 
+" Switch buffers
+nnoremap <left> :bp<CR>
+nnoremap <right> :bn<CR>
+
 " Move by line
 nnoremap j gj
 nnoremap k gk
