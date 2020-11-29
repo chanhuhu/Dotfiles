@@ -7,6 +7,8 @@
 
 alias ls='ls --color=auto -h --group-directories-first'
 alias path='echo $PATH | tr ":" "\n"'
+alias syserrors="journalctl -p 3 -xb"
+alias sysderrors="systemctl --failed"
 PS1='[\u@\h \W]\$ '
 
 # Base16 Shell
