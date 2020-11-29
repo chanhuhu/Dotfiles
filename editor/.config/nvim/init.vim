@@ -307,14 +307,6 @@ nnoremap <silent> <space>i  :call CocActionAsync('codeAction', '', 'Implement mi
 " Show actions available at this location
 nnoremap <silent> <space>a  :CocAction<cr>
 
-" Remap for do codeAction of selected region
-function! s:cocActionsOpenFromSelected(type) abort
-  execute 'CocCommand actions.open ' . a:type
-endfunction
-
-xmap <silent> <leader>a :<C-u>execute 'CocCommand actions.open ' . visualmode()<CR>
-nmap <silent> <leader>a :<C-u>set operatorfunc=<SID>cocActionsOpenFromSelected<CR>g@
-
 " Leave paste mode when leaving insert mode
 autocmd InsertLeave * set nopaste
 
