@@ -18,11 +18,6 @@ export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=lcd -Dswing.defaultlaf=com.s
 export JAVA_FONTS=/usr/share/fonts/TTF
 export AWT_TOOLKIT=MToolkit
 
-# pyenv configures
-export PYENV_ROOT="$HOME/.pyenv"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-
 # FZF settings
 export FZF_DEFAULT_COMMAND="fd --type f --follow"
 export FZF_CTRL_T_COMMAND="fd --type f --follow"
