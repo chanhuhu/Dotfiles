@@ -1,0 +1,13 @@
+{
+  "coc.preferences.formatOnType": true,
+  "coc.preferences.formatOnSaveFiletypes": [
+    "javascript",
+    "json",
+    "markdown",
+    "python",
+    "typescript"
+  ],
+  "diagnostic.format": "%message [%source]",
+  "python.formatting.provider": "black",
+  "python.venvPath": ".env"
+}
