@@ -2,12 +2,24 @@
   "coc.preferences.formatOnType": true,
   "coc.preferences.formatOnSaveFiletypes": [
     "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact",
     "json",
-    "markdown",
     "python",
-    "typescript"
+    "markdown"
   ],
   "diagnostic.format": "%message [%source]",
   "python.formatting.provider": "black",
-  "python.venvPath": ".env"
+  "python.venvPath": ".env",
+  "prettier.printWidth": 80,
+  "prettier.singleQuote": true,
+  "prettier.eslintIntegration": true,
+  "eslint.autoFixOnSave": true,
+  "eslint.filetypes": [
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact"
+  ]
 }
