@@ -5,8 +5,9 @@
     "typescript",
     "javascriptreact",
     "typescriptreact",
-    "json",
     "python",
+    "rust",
+    "json",
     "markdown"
   ],
   "diagnostic.format": "%message [%source]",
@@ -21,5 +22,6 @@
     "typescript",
     "javascriptreact",
     "typescriptreact"
-  ]
+  ],
+  "rust-analyzer.serverPath": "/usr/bin/rust-analyzer"
 }
