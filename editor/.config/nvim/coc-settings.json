@@ -11,6 +11,7 @@
     "markdown"
   ],
   "diagnostic.format": "%message [%source]",
+  "html.autoClosingTags": true,
   "python.formatting.provider": "black",
   "python.venvPath": ".env",
   "prettier.printWidth": 80,

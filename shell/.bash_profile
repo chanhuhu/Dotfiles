@@ -47,11 +47,11 @@ man() {
 # Clean up path
 export PATH=\
 $HOME/.yarn/bin:\
-$PYENV_ROOT/bin:\
+$HOME/.cargo/bin:\
+$JAVA_HOME/bin:\
 $ANDROID_HOME/platform-tools:\
 $ANDROID_HOME/emulator:\
 $ANDROID_HOME/tools:\
-$JAVA_HOME/bin:\
 $HOME/.local/bin/scripts:\
 $HOME/.local/bin:\
 /usr/local/sbin:\

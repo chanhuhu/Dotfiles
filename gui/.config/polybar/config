@@ -217,7 +217,7 @@ click-right = pavucontrol &
 [module/battery]
 type = internal/battery
 battery = BAT0
-adapter = AC
+adapter = AC0
 full-at = 98
 
 format-charging = <label-charging>
