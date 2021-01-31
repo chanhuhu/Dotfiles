@@ -18,11 +18,11 @@
   "prettier.singleQuote": true,
   "prettier.eslintIntegration": true,
   "eslint.autoFixOnSave": true,
-  "eslint.filetypes": [
+  "eslint.validate": [
     "javascript",
     "typescript",
     "javascriptreact",
     "typescriptreact"
   ],
-  "rust-analyzer.serverPath": "/usr/bin/rust-analyzer"
+  "rust-analyzer.server.path": "/usr/bin/rust-analyzer"
 }
