@@ -24,5 +24,12 @@
     "javascriptreact",
     "typescriptreact"
   ],
-  "rust-analyzer.server.path": "/usr/bin/rust-analyzer"
+  "rust-analyzer.server.path": "/usr/bin/rust-analyzer",
+  "languageserver": {
+    "golang": {
+      "command": "gopls",
+      "rootPatterns": ["go.mod", ".vim/", ".git/", ".hg/"],
+      "filetypes": ["go"]
+    }
+  }
 }
