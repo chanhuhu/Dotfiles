@@ -18,6 +18,10 @@ export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=lcd -Dswing.defaultlaf=com.s
 export JAVA_FONTS=/usr/share/fonts/TTF
 export AWT_TOOLKIT=MToolkit
 
+# Go dir
+export GOPATH="$HOME/.local/go"
+export GOBIN="$GOPATH/bin"
+
 # FZF settings
 export FZF_DEFAULT_COMMAND="fd --type f --follow"
 export FZF_CTRL_T_COMMAND="fd --type f --follow"
@@ -46,7 +50,9 @@ man() {
 
 # Clean up path
 export PATH=\
+$GOBIN:\
 $HOME/.yarn/bin:\
+$HOME/.npm-global/bin:\
 $HOME/.cargo/bin:\
 $JAVA_HOME/bin:\
 $ANDROID_HOME/platform-tools:\
