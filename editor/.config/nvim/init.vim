@@ -8,6 +8,7 @@ if empty(glob('~/.local/share/nvim/site/autoload'))
 endif
 
 call plug#begin('~/.local/share/nvim/plugged')
+Plug 'airblade/vim-rooter'
 Plug 'andymass/vim-matchup'
 Plug 'chriskempson/base16-vim'
 Plug 'editorconfig/editorconfig-vim'

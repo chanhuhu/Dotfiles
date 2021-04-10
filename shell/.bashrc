@@ -5,7 +5,8 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-alias ls='ls --color=auto -h --group-directories-first'
+#alias ls='ls --color=auto -h --group-directories-first'
+alias ls="exa"
 alias path='echo $PATH | tr ":" "\n"'
 alias syserrors="journalctl -p 3 -xb"
 alias sysderrors="systemctl --failed"
