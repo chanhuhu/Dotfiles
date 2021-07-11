@@ -17,6 +17,7 @@ export _JAVA_AWT_WM_NONREPARENTING=1
 export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=lcd -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel"
 export JAVA_FONTS=/usr/share/fonts/TTF
 export AWT_TOOLKIT=MToolkit
+export CHROME_EXECUTABLE=/usr/sbin/google-chrome-stable
 
 # Go dir
 export GOPATH="$HOME/.local/go"
@@ -48,9 +49,14 @@ man() {
     man "${@}"
 }
 
+# ruby
+export GEM_HOME="$(ruby -e 'puts Gem.user_dir')"
+
 # Clean up path
 export PATH=\
+/opt/flutter/bin:\
 $GOBIN:\
+$GEM_HOME/bin:\
 $HOME/.yarn/bin:\
 $HOME/.npm-global/bin:\
 $HOME/.cargo/bin:\

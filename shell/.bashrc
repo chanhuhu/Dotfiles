@@ -7,7 +7,7 @@
 
 #alias ls='ls --color=auto -h --group-directories-first'
 alias ls="exa"
-alias path='echo $PATH | tr ":" "\n"'
+alias path='echo $PATH | tr ":" "\n" | nl'
 alias syserrors="journalctl -p 3 -xb"
 alias sysderrors="systemctl --failed"
 PS1='[\u@\h \W]\$ '
@@ -18,5 +18,5 @@ BASE16_SHELL="$HOME/.config/base16-shell/"
     [ -s "$BASE16_SHELL/profile_helper.sh" ] && \
         eval "$("$BASE16_SHELL/profile_helper.sh")"
 
-# Fzf settings
+
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash

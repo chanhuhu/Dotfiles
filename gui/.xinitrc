@@ -9,9 +9,11 @@ usermodmap=$HOME/.Xmodmap
 sysresources=/etc/X11/xinit/.Xresources
 sysmodmap=/etc/X11/xinit/.Xmodmap
 
-# merge in defaults and keymaps
 
+# settings
 setxkbmap -model pc105 -layout us,th -option grp:alt_shift_toggle,caps:ctrl_modifier &
+
+# merge in defaults and keymaps
 if [ -f $sysresources ]; then
     echo "running sysresources "
     xrdb -merge $sysresources
@@ -39,5 +41,6 @@ if [ -d /etc/X11/xinit/xinitrc.d ] ; then
    unset f
 fi
 
+# running window manger
 sxhkd &
 exec bspwm
