@@ -26,7 +26,7 @@ export GOBIN="$GOPATH/bin"
 # FZF settings
 export FZF_DEFAULT_COMMAND="fd --type f --follow"
 export FZF_CTRL_T_COMMAND="fd --type f --follow"
-export FZF_DEFAULT_OPTS="--height 20%"
+export FZF_DEFAULT_OPTS="--height 50%"
 
 # Less Colors for Man Pages
 man() {

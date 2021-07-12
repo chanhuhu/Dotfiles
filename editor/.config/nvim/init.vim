@@ -8,14 +8,19 @@ endif
 call plug#begin('~/.local/share/nvim/plugged')
 " Improve editor
 Plug 'airblade/vim-rooter'
-Plug 'chakrit/vim-thai-keys'
+Plug 'andymass/vim-matchup'
 Plug 'editorconfig/editorconfig-vim'
 Plug 'justinmk/vim-sneak'
 Plug 'lewis6991/gitsigns.nvim'
+Plug 'chakrit/vim-thai-keys'
+Plug 'lyokha/vim-xkbswitch'
 " Autocompletion
+Plug 'folke/lsp-colors.nvim'
 Plug 'hrsh7th/nvim-compe'
+Plug 'simrat39/rust-tools.nvim'
 Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/vim-vsnip'
+Plug 'rafamadriz/friendly-snippets'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'nvim-lua/plenary.nvim'
@@ -34,6 +39,9 @@ if has('nvim')
   set inccommand=nosplit
   noremap <C-q> :confirm qall<CR>
 end
+
+" vim-xkbswitch
+let g:XkbSwitchEnabled = 1
 
 " deal with colors
 hi Normal ctermbg=NONE
@@ -193,8 +201,8 @@ inoremap <silent><expr> <C-e>     compe#close('<C-e>')
 inoremap <silent><expr> <C-f>     compe#scroll({ 'delta': +4 })
 inoremap <silent><expr> <C-d>     compe#scroll({ 'delta': -4 })
 
-" Lsp config
 lua <<EOF
+-- lspconfig
 local nvim_lsp = require('lspconfig')
 -- Use an on_attach function to only map the following keys
 -- after the language server attaches to the current buffer
@@ -232,47 +240,214 @@ local on_attach = function(client, bufnr)
       luasnip = false,
     },
   }
-
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
-
   --Enable completion triggered by <c-x><c-o>
   buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
-
   -- Mappings.
   local opts = { noremap=true, silent=true }
-
   -- See `:help vim.lsp.*` for documentation on any of the below functions
-  buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', opts)
-  buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
   buf_set_keymap('n', 'gd', '<cmd>lua require("telescope.builtin").lsp_definitions()<CR>', opts)
+  buf_set_keymap('n', 'gi', '<cmd>lua require("telescope.builtin").lsp_implementations()<CR>', opts)
+  buf_set_keymap('n', 'gr', '<cmd>lua require("telescope.builtin").lsp_references()<CR>', opts)
+  buf_set_keymap('n', 'gy', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
+  buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', opts)
+  buf_set_keymap('v', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_range_code_actions()<CR>', opts)
+  buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").lsp_document_diagnostics()<CR>', opts)
+  buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+  buf_set_keymap('n', '<leader>o', '<cmd>lua require("telescope.builtin").lsp_document_symbols()<CR>', opts)
+  buf_set_keymap('n', '<leader>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
+  buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+  buf_set_keymap('n', '<leader>s', '<cmd>lua require("telescope.builtin").lsp_workspace_symbols()<CR>', opts)
+  buf_set_keymap('n', '<leader>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<leader>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
+  buf_set_keymap('n', '<leader>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   buf_set_keymap('n', '[g', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
-  buf_set_keymap('n', 'gi', '<cmd>lua require("telescope.builtin").lsp_implementations()<CR>', opts)
-  buf_set_keymap('n', 'gy', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
-  buf_set_keymap('n', 'gr', '<cmd>lua require("telescope.builtin").lsp_references()<CR>', opts)
-  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
-  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
-  buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").lsp_document_diagnostics()<CR>', opts)
-  buf_set_keymap('n', '<leader>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
-  buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
-  buf_set_keymap('n', '<leader>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<leader>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<leader>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
 end
-nvim_lsp.rust_analyzer.setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
+-- Enable (broadcasting) snippet capability for completion
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+capabilities.textDocument.completion.completionItem.resolveSupport = {
+  properties = {
+    'documentation',
+    'detail',
+    'additionalTextEdits',
+  }
 }
-EOF
+-- Use a loop to conveniently call 'setup' on multiple servers and
+-- map buffer local keybindings when the language server attaches
+local lsp_servers = {
+  'cssls',
+  'html',
+  'jsonls',
+  'pyright',
+  'tsserver',
+}
+for _, lsp in ipairs(lsp_servers) do
+  nvim_lsp[lsp].setup {
+    on_attach = on_attach,
+    capabilities = capabilities,
+    flags = {
+      allow_incremental_sync = true,
+      debounce_text_changes = 500,
+    },
+  }
+end
 
-" Treesitter config
-lua <<EOF
+-- rust-tools
+local opts = {
+  tools = { -- rust-tools options
+    -- automatically set inlay hints (type hints)
+    -- There is an issue due to which the hints are not applied on the first
+    -- opened file. For now, write to the file to trigger a reapplication of
+    -- the hints or just run :RustSetInlayHints.
+    -- default: true
+    autoSetHints = true,
+    -- whether to show hover actions inside the hover window
+    -- this overrides the default hover handler so something like lspsaga.nvim's hover would be overriden by this
+    -- default: true
+    hover_with_actions = true,
+    -- These apply to the default RustRunnables command
+    runnables = {
+      -- whether to use telescope for selection menu or not
+      -- default: true
+      use_telescope = true
+      -- rest of the opts are forwarded to telescope
+    },
+    -- These apply to the default RustSetInlayHints command
+    inlay_hints = {
+      -- wheter to show parameter hints with the inlay hints or not
+      -- default: true
+      show_parameter_hints = true,
+      -- prefix for parameter hints
+      -- default: "<-"
+      parameter_hints_prefix = ":",
+      -- prefix for all the other hints (type, chaining)
+      -- default: "=>"
+      other_hints_prefix = "→ ",
+      -- whether to align to the lenght of the longest line in the file
+      max_len_align = false,
+      -- padding from the left if max_len_align is true
+      max_len_align_padding = 1,
+      -- whether to align to the extreme right or not
+      right_align = false,
+      -- padding from the right if right_align is true
+      right_align_padding = 7
+    },
+    hover_actions = {
+      -- the border that is used for the hover window
+      -- see vim.api.nvim_open_win()
+      border = {
+        {"╭", "FloatBorder"}, {"─", "FloatBorder"},
+        {"╮", "FloatBorder"}, {"│", "FloatBorder"},
+        {"╯", "FloatBorder"}, {"─", "FloatBorder"},
+        {"╰", "FloatBorder"}, {"│", "FloatBorder"}
+      },
+      -- whether the hover action window gets automatically focused
+      -- default: false
+      auto_focus = false,
+    },
+  },
+-- all the opts to send to nvim-lspconfig
+-- these override the defaults set by rust-tools.nvim
+-- see https://github.com/neovim/nvim-lspconfig/blob/master/CONFIG.md#rust_analyzer
+  server = {
+    on_attach = on_attach,
+    capabilities = capabilities,
+    flags = {
+      allow_incremental_sync = true,
+      debounce_text_changes = 500,
+    },
+    settings = {
+      ["rust-analyzer"] = {
+        assist = {
+          importGranularity = "module",
+          importEnforceGranularity = true,
+        },
+        cargo = {
+          loadOutDirsFromCheck = true,
+          allFeatures = true,
+        },
+        procMacro = {
+          enable = true,
+        },
+        checkOnSave = {
+          command = "clippy",
+        },
+        experimental = {
+          procAttrMacros = true,
+        },
+        hoverActions = {
+          references = true,
+        },
+        inlayHints = {
+          chainingHints = true,
+          maxLength = 40,
+          parameterHints = true,
+          typeHints = true,
+        },
+        lens = {
+          methodReferences = true,
+          references = true,
+        },
+      },
+    },
+  }, -- rust-analyer options
+}
+require('rust-tools').setup(opts)
+
+-- treesitter
 require('nvim-treesitter.configs').setup {
+  ensure_installed = {
+    'css',
+    'go',
+    'html',
+    'json',
+    'lua',
+    'python',
+    'rust',
+    'tsx',
+    'typescript',
+    'vue',
+  },
   autotag = { enable = true },
   highlight = { enable = true },
+  incremental_selection = {
+    enable = true,
+    keymaps = {
+      init_selection = "gnn",
+      node_incremental = "grn",
+      scope_incremental = "grc",
+      node_decremental = "grm",
+    },
+  },
+  indent = { enable = true },
+  matchup = {
+    enable = true,              -- mandatory, false will disable the whole extension
+    disable = { "c", "ruby" },  -- optional, list of language that will be disabled
+  },
   textobjects = {
+    lsp_interop = {
+      border = 'none',
+      enable = true,
+      peek_definition_code = {
+        ["df"] = "@function.outer",
+        ["dF"] = "@class.outer",
+      },
+    },
+    move = {
+      enable = true,
+      goto_next_start = {
+          [']m'] = '@function.outer',
+      },
+      goto_previous_start = {
+          ['[m'] = '@function.outer',
+      },
+    },
     select = {
       enable = true,
       lookahead = true,
@@ -282,21 +457,10 @@ require('nvim-treesitter.configs').setup {
       },
     },
     swap = { enable = false },
-    move = {
-      enable = true,
-      goto_next_start = {
-          [']m'] = '@function.outer',
-      },
-      goto_previous_start = {
-          ['[m'] = '@function.outer',
-      },
-    }
   },
 }
-EOF
 
-" Telescope config
-lua <<EOF
+-- telescope
 require('telescope').setup {
   extensions = {
     fzf = {
@@ -323,20 +487,26 @@ require('telescope').setup {
   },
 }
 require('telescope').load_extension('fzf')
-EOF
-lua require('gitsigns').setup()
 
-" vsnip config
-lua <<EOF
+-- gitsings
+require('gitsigns').setup()
+
+-- lsp-colors 
+require('lsp-colors').setup({
+  Error = '#db4b4b',
+  Warning = '#e0af68',
+  Information = '#0db9d7',
+  Hint = '#10B981'
+})
+
+-- vim-snip
 local t = function(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
-
 local check_back_space = function()
     local col = vim.fn.col('.') - 1
     return col == 0 or vim.fn.getline('.'):sub(col, col):match('%s') ~= nil
 end
-
 -- Use (s-)tab to:
 --- move to prev/next item in completion menuone
 --- jump to prev/next snippet's placeholder
@@ -361,12 +531,12 @@ _G.s_tab_complete = function()
     return t "<S-Tab>"
   end
 end
-
 vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 EOF
+" end lua config
 
 " Jump to last edit position on opening file
 if has("autocmd")
