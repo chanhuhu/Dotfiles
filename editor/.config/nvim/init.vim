@@ -17,10 +17,11 @@ Plug 'lyokha/vim-xkbswitch'
 " Autocompletion
 Plug 'folke/lsp-colors.nvim'
 Plug 'hrsh7th/nvim-compe'
-Plug 'simrat39/rust-tools.nvim'
 Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'rafamadriz/friendly-snippets'
+Plug 'folke/lua-dev.nvim'
+Plug 'simrat39/rust-tools.nvim'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'nvim-lua/plenary.nvim'
@@ -60,16 +61,24 @@ if executable('rg')
   set grepprg=rg\ --no-heading\ --vimgrep
   set grepformat=%f:%l:%c:%m
 endif
+" Comments highlighting
+function! s:base16_customize() abort
+  call Base16hi("Comment", g:base16_gui0C, "", g:base16_cterm0C, "", "", "")
+endfunction
+
+augroup on_change_colorschema
+  autocmd!
+  autocmd ColorScheme * call s:base16_customize()
+augroup END
+
 
 " Editor settings
 set nocompatible
 filetype plugin indent on
 syntax on
-" Better display for messages
-set cmdheight=2
 set completeopt=menuone,noselect
 " You will have bad experience for diagnostic messages when it's default 4000.
-set updatetime=300
+set updatetime=250
 set encoding=utf-8
 set hidden
 set nobackup
@@ -242,7 +251,7 @@ local on_attach = function(client, bufnr)
   }
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
-  --Enable completion triggered by <c-x><c-o>
+  -- Enable completion triggered by <c-x><c-o>
   buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
   -- Mappings.
   local opts = { noremap=true, silent=true }
@@ -267,6 +276,11 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   buf_set_keymap('n', '[g', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
+  if client.name == 'rust_analyzer' then
+    buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
+    buf_set_keymap('n', '<leader>t', '<cmd>RustSetInlayHints<CR>', opts)
+    buf_set_keymap('n', '<F5>', '<cmd>RustRunnables<CR>', opts)
+  end
 end
 -- Enable (broadcasting) snippet capability for completion
 local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -297,6 +311,28 @@ for _, lsp in ipairs(lsp_servers) do
     },
   }
 end
+
+-- lua development
+USER = vim.fn.expand('$USER')
+local sumneko_root_path = ""
+local sumneko_binary = ""
+if vim.fn.has("mac") == 1 then
+  sumneko_root_path = "/Users/" .. USER .. "/.config/nvim/lua-language-server"
+  sumneko_binary = "/Users/" .. USER .. "/.config/nvim/lua-language-server/bin/macOS/lua-language-server"
+elseif vim.fn.has("unix") == 1 then
+  sumneko_root_path = "/home/" .. USER .. "/.local/share/nvim/lua-language-server"
+  sumneko_binary = "/home/" .. USER .. "/.local/share/nvim/lua-language-server/bin/Linux/lua-language-server"
+else
+  print("Unsupported system for sumneko")
+end
+local luadev = require('lua-dev').setup {
+  lspconfig = {
+    cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
+    on_attach = on_attach,
+    capabilities = capabilities,
+  },
+}
+nvim_lsp.sumneko_lua.setup(luadev)
 
 -- rust-tools
 local opts = {
