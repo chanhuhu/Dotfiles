@@ -157,6 +157,7 @@ set listchars=nbsp:¬,extends:»,precedes:«,trail:•
 
 " Key remapping
 let mapleader = "\<Space>"
+inoremap <C-c> <Esc>
 nmap <leader>w :w<CR>
 noremap <leader>n :nohlsearch<CR>
 
@@ -212,43 +213,10 @@ inoremap <silent><expr> <C-d>     compe#scroll({ 'delta': -4 })
 
 lua <<EOF
 -- lspconfig
-local nvim_lsp = require('lspconfig')
+local lspconfig = require('lspconfig')
 -- Use an on_attach function to only map the following keys
 -- after the language server attaches to the current buffer
 local on_attach = function(client, bufnr)
-  -- load compe
-  require('compe').setup {
-    enabled = true,
-    autocomplete = true,
-    debug = false,
-    min_length = 1,
-    preselect = 'enable',
-    throttle_time = 80,
-    source_timeout = 200,
-    resolve_timeout = 800,
-    incomplete_delay = 400,
-    max_abbr_width = 100,
-    max_kind_width = 100,
-    max_menu_width = 100,
-    documentation = {
-      border = { '', '' ,'', ' ', '', '', '', ' ' }, -- the border option is the same as `|help nvim_open_win|`
-      winhighlight = "NormalFloat:CompeDocumentation,FloatBorder:CompeDocumentationBorder",
-      max_width = 120,
-      min_width = 60,
-      max_height = math.floor(vim.o.lines * 0.3),
-      min_height = 1,
-    },
-    source = {
-      path = true,
-      buffer = true,
-      calc = true,
-      nvim_lsp = true,
-      nvim_lua = true,
-      vsnip = true,
-      ultisnips = false,
-      luasnip = false,
-    },
-  }
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
   -- Enable completion triggered by <c-x><c-o>
@@ -302,12 +270,11 @@ local lsp_servers = {
   'tsserver',
 }
 for _, lsp in ipairs(lsp_servers) do
-  nvim_lsp[lsp].setup {
+  lspconfig[lsp].setup {
     on_attach = on_attach,
     capabilities = capabilities,
     flags = {
       allow_incremental_sync = true,
-      debounce_text_changes = 500,
     },
   }
 end
@@ -332,7 +299,7 @@ local luadev = require('lua-dev').setup {
     capabilities = capabilities,
   },
 }
-nvim_lsp.sumneko_lua.setup(luadev)
+lspconfig.sumneko_lua.setup(luadev)
 
 -- rust-tools
 local opts = {
@@ -396,7 +363,6 @@ local opts = {
     capabilities = capabilities,
     flags = {
       allow_incremental_sync = true,
-      debounce_text_changes = 500,
     },
     settings = {
       ["rust-analyzer"] = {
@@ -435,6 +401,40 @@ local opts = {
   }, -- rust-analyer options
 }
 require('rust-tools').setup(opts)
+
+-- load compe
+require('compe').setup {
+  enabled = true,
+  autocomplete = true,
+  debug = false,
+  min_length = 1,
+  preselect = 'enable',
+  throttle_time = 80,
+  source_timeout = 200,
+  resolve_timeout = 800,
+  incomplete_delay = 400,
+  max_abbr_width = 100,
+  max_kind_width = 100,
+  max_menu_width = 100,
+  documentation = {
+    border = { '', '' ,'', ' ', '', '', '', ' ' }, -- the border option is the same as `|help nvim_open_win|`
+    winhighlight = "NormalFloat:CompeDocumentation,FloatBorder:CompeDocumentationBorder",
+    max_width = 120,
+    min_width = 60,
+    max_height = math.floor(vim.o.lines * 0.3),
+    min_height = 1,
+  },
+  source = {
+    path = true,
+    buffer = true,
+    calc = false,
+    nvim_lsp = true,
+    nvim_lua = true,
+    vsnip = true,
+    ultisnips = false,
+    luasnip = false,
+  },
+}
 
 -- treesitter
 require('nvim-treesitter.configs').setup {
