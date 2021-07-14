@@ -15,7 +15,6 @@ Plug 'lewis6991/gitsigns.nvim'
 Plug 'chakrit/vim-thai-keys'
 Plug 'lyokha/vim-xkbswitch'
 " Autocompletion
-Plug 'folke/lsp-colors.nvim'
 Plug 'hrsh7th/nvim-compe'
 Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/vim-vsnip'
@@ -520,14 +519,6 @@ require('telescope').load_extension('fzf')
 
 -- gitsings
 require('gitsigns').setup()
-
--- lsp-colors 
-require('lsp-colors').setup({
-  Error = '#db4b4b',
-  Warning = '#e0af68',
-  Information = '#0db9d7',
-  Hint = '#10B981'
-})
 
 -- vim-snip
 local t = function(str)
