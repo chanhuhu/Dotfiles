@@ -245,9 +245,9 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', '[g', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
   if client.name == 'rust_analyzer' then
+    buf_set_keymap('n', '<leader>r', '<cmd>RustRun<CR>', opts)
+    buf_set_keymap('n', '<leader>t', '<cmd>RustRunnables<CR>', opts)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
-    buf_set_keymap('n', '<leader>t', '<cmd>RustSetInlayHints<CR>', opts)
-    buf_set_keymap('n', '<F5>', '<cmd>RustRunnables<CR>', opts)
   end
 end
 -- Enable (broadcasting) snippet capability for completion
@@ -385,12 +385,6 @@ local opts = {
         },
         hoverActions = {
           references = true,
-        },
-        inlayHints = {
-          chainingHints = true,
-          maxLength = 40,
-          parameterHints = true,
-          typeHints = true,
         },
         lens = {
           methodReferences = true,
