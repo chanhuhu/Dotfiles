@@ -20,6 +20,7 @@ Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'rafamadriz/friendly-snippets'
 Plug 'folke/lua-dev.nvim'
+Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'simrat39/rust-tools.nvim'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
@@ -38,6 +39,7 @@ if has('nvim')
   set guicursor=n-v-c:block-Cursor/lCursor-blinkon0,i-ci:ver25-Cursor/lCursor,r-cr:hor20-Cursor/lCursor
   set inccommand=nosplit
   noremap <C-q> :confirm qall<CR>
+  " uses built in highling_yank instead of plugin
 end
 
 " vim-xkbswitch
@@ -69,7 +71,15 @@ augroup on_change_colorschema
   autocmd!
   autocmd ColorScheme * call s:base16_customize()
 augroup END
-
+" Jump to last edit position on opening file
+if has("autocmd")
+  " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
+  au BufReadPost * if expand('%:p') !~# '\m/\.git/' && line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+endif
+augroup highlight_yank
+    autocmd!
+    autocmd TextYankPost * silent! lua require('vim.highlight').on_yank({timeout = 250})
+augroup END
 
 " Editor settings
 set nocompatible
@@ -176,7 +186,7 @@ map L $
 
 " Neat X clipboard integration
 noremap <leader>p :read !xsel --clipboard --output<CR>
-noremap <leader>c :w !xsel -ib<CR><CR>
+noremap <leader>cc :w !xsel -ib<CR><CR>
 
 " Open new file adjacent to current file
 nnoremap <leader>e :e <C-R>=expand("%:p:h") . "/" <CR>
@@ -196,6 +206,7 @@ nnoremap <right> :bn<CR>
 " Move by line
 nnoremap j gj
 nnoremap k gk
+
 " Find files
 nnoremap <C-p> <cmd>Telescope git_files<CR>
 nnoremap <leader>ff <cmd>Telescope find_files<CR>
@@ -248,6 +259,14 @@ local on_attach = function(client, bufnr)
     buf_set_keymap('n', '<leader>t', '<cmd>RustRunnables<CR>', opts)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
   end
+  if client.name == 'typescript' or client.name == 'tsserver' then
+    -- disable tsserver formatting
+    require('nvim-lsp-ts-utils').setup(client)
+    buf_set_keymap("n", "<F2>", ":TSLspRenameFile<CR>", opts)
+    buf_set_keymap("n", "<M-a>", ":TSLspFixCurrent<CR>", opts)
+    buf_set_keymap("n", "<M-i>", ":TSImportAll<CR>", opts)
+    buf_set_keymap("n", "<M-o>", ":TSLspOrganize<CR>", opts)
+  end
 end
 -- Enable (broadcasting) snippet capability for completion
 local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -279,18 +298,8 @@ for _, lsp in ipairs(lsp_servers) do
 end
 
 -- lua development
-USER = vim.fn.expand('$USER')
-local sumneko_root_path = ""
-local sumneko_binary = ""
-if vim.fn.has("mac") == 1 then
-  sumneko_root_path = "/Users/" .. USER .. "/.config/nvim/lua-language-server"
-  sumneko_binary = "/Users/" .. USER .. "/.config/nvim/lua-language-server/bin/macOS/lua-language-server"
-elseif vim.fn.has("unix") == 1 then
-  sumneko_root_path = "/home/" .. USER .. "/.local/share/nvim/lua-language-server"
-  sumneko_binary = "/home/" .. USER .. "/.local/share/nvim/lua-language-server/bin/Linux/lua-language-server"
-else
-  print("Unsupported system for sumneko")
-end
+local sumneko_root_path = vim.fn.stdpath('data') .. '/lua-language-server'
+local sumneko_binary = sumneko_root_path .. '/bin/Linux/lua-language-server'
 local luadev = require('lua-dev').setup {
   lspconfig = {
     cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
@@ -558,16 +567,4 @@ vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 EOF
 " end lua config
-
-" Jump to last edit position on opening file
-if has("autocmd")
-  " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
-  au BufReadPost * if expand('%:p') !~# '\m/\.git/' && line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-endif
-
-" uses built in highling_yank instead of plugin
-augroup highlight_yank
-    autocmd!
-    autocmd TextYankPost * silent! lua require('vim.highlight').on_yank({timeout = 250})
-augroup END
 
