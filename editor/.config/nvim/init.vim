@@ -12,7 +12,6 @@ Plug 'andymass/vim-matchup'
 Plug 'editorconfig/editorconfig-vim'
 Plug 'justinmk/vim-sneak'
 Plug 'lewis6991/gitsigns.nvim'
-Plug 'chakrit/vim-thai-keys'
 Plug 'lyokha/vim-xkbswitch'
 " Autocompletion
 Plug 'hrsh7th/nvim-compe'
@@ -20,7 +19,6 @@ Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'rafamadriz/friendly-snippets'
 Plug 'folke/lua-dev.nvim'
-Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'simrat39/rust-tools.nvim'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
@@ -42,8 +40,8 @@ if has('nvim')
   " uses built in highling_yank instead of plugin
 end
 
-" vim-xkbswitch
-let g:XkbSwitchEnabled = 1
+" disable builtin
+let g:loaded_matchit = 1
 
 " deal with colors
 hi Normal ctermbg=NONE
@@ -86,10 +84,7 @@ set nocompatible
 filetype plugin indent on
 syntax on
 set completeopt=menuone,noselect
-" You will have bad experience for diagnostic messages when it's default 4000.
-set updatetime=250
 set encoding=utf-8
-set hidden
 set nobackup
 set nowritebackup
 set noswapfile
@@ -100,10 +95,24 @@ set printencoding=utf-8
 set printfont=:h10
 set printoptions=paper:letter
 set scrolloff=2
-set timeoutlen=250 " http://stackoverflow.com/questions/2158516/delay-before-o-opens-a-new-line
 set signcolumn=yes
 
-" Sane splits
+" Timings
+set hidden
+set timeoutlen=250 " http://stackoverflow.com/questions/2158516/delay-before-o-opens-a-new-line
+set updatetime=250 " You will have bad experience for diagnostic messages when it's default 4000.
+
+" Make diffing better: https://vimways.org/2018/the-power-of-diff/
+set diffopt+=iwhite " No whitespace in vimdiff
+set diffopt+=algorithm:patience
+set diffopt+=indent-heuristic
+
+" Folds
+set foldexpr=nvim_treesitter#foldexpr()
+set foldmethod=expr
+set nofoldenable
+
+" Window spliting and buffers
 set splitright
 set splitbelow
 
@@ -140,25 +149,22 @@ set gdefault
 
 " GUI settings
 set guioptions-=T " Remove toolbar
-set vb t_vb= " No more beeps
 set backspace=2 " Backspace over newlines
-set nofoldenable
+set cmdheight=2
+set colorcolumn=80 " and give me a colored column
+set laststatus=2
+set mouse=a " Enable mouse usage (all modes) in terminals
+set number " Also show current absolute line
+set relativenumber " Relative line numbers
+set shortmess+=c " don't give |ins-completion-menu| messages.
+set showcmd " Show (partial) command in status line.
+set textwidth=79
 set ttyfast
+set vb t_vb= " No more beeps
+
 " https://github.com/vim/vim/issues/1735#issuecomment-383353563
 set lazyredraw
 set synmaxcol=500
-set laststatus=2
-set relativenumber " Relative line numbers
-set number " Also show current absolute line
-set diffopt+=iwhite " No whitespace in vimdiff
-" Make diffing better: https://vimways.org/2018/the-power-of-diff/
-set diffopt+=algorithm:patience
-set diffopt+=indent-heuristic
-set textwidth=79
-set colorcolumn=80 " and give me a colored column
-set showcmd " Show (partial) command in status line.
-set mouse=a " Enable mouse usage (all modes) in terminals
-set shortmess+=c " don't give |ins-completion-menu| messages.
 
 " Show those damn hidden characters
 " Verbose: set listchars=nbsp:¬,eol:¶,extends:»,precedes:«,trail:•
@@ -186,7 +192,7 @@ map L $
 
 " Neat X clipboard integration
 noremap <leader>p :read !xsel --clipboard --output<CR>
-noremap <leader>cc :w !xsel -ib<CR><CR>
+noremap <leader>c :w !xsel -ib<CR><CR>
 
 " Open new file adjacent to current file
 nnoremap <leader>e :e <C-R>=expand("%:p:h") . "/" <CR>
@@ -209,8 +215,8 @@ nnoremap k gk
 
 " Find files
 nnoremap <C-p> <cmd>Telescope git_files<CR>
-nnoremap <leader>ff <cmd>Telescope find_files<CR>
-nnoremap <leader>g <cmd>Telescope grep_string search=''<CR>
+nnoremap <leader>f <cmd>Telescope find_files<CR>
+nnoremap <leader>g <cmd>Telescope live_grep<CR>
 nnoremap <leader>; <cmd>Telescope buffers<CR>
 nnoremap <leader>h <cmd>Telescope help_tags<CR>
 
@@ -223,6 +229,7 @@ inoremap <silent><expr> <C-d>     compe#scroll({ 'delta': -4 })
 
 lua <<EOF
 -- lspconfig
+local debounce_text_changes = 500
 local lspconfig = require('lspconfig')
 -- Use an on_attach function to only map the following keys
 -- after the language server attaches to the current buffer
@@ -255,17 +262,9 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', '[g', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
   if client.name == 'rust_analyzer' then
-    buf_set_keymap('n', '<leader>r', '<cmd>RustRun<CR>', opts)
+    buf_set_keymap('n', '<F5>', '<cmd>RustRun<CR>', opts)
     buf_set_keymap('n', '<leader>t', '<cmd>RustRunnables<CR>', opts)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
-  end
-  if client.name == 'typescript' or client.name == 'tsserver' then
-    -- disable tsserver formatting
-    require('nvim-lsp-ts-utils').setup(client)
-    buf_set_keymap("n", "<F2>", ":TSLspRenameFile<CR>", opts)
-    buf_set_keymap("n", "<M-a>", ":TSLspFixCurrent<CR>", opts)
-    buf_set_keymap("n", "<M-i>", ":TSImportAll<CR>", opts)
-    buf_set_keymap("n", "<M-o>", ":TSLspOrganize<CR>", opts)
   end
 end
 -- Enable (broadcasting) snippet capability for completion
@@ -293,6 +292,7 @@ for _, lsp in ipairs(lsp_servers) do
     capabilities = capabilities,
     flags = {
       allow_incremental_sync = true,
+      debounce_text_changes = debounce_text_changes,
     },
   }
 end
@@ -305,6 +305,10 @@ local luadev = require('lua-dev').setup {
     cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
     on_attach = on_attach,
     capabilities = capabilities,
+    flags = {
+      allow_incremental_sync = true,
+      debounce_text_changes = debounce_text_changes,
+    },
   },
 }
 lspconfig.sumneko_lua.setup(luadev)
@@ -326,7 +330,7 @@ local opts = {
     runnables = {
       -- whether to use telescope for selection menu or not
       -- default: true
-      use_telescope = true
+      use_telescope = true,
       -- rest of the opts are forwarded to telescope
     },
     -- These apply to the default RustSetInlayHints command
@@ -352,12 +356,7 @@ local opts = {
     hover_actions = {
       -- the border that is used for the hover window
       -- see vim.api.nvim_open_win()
-      border = {
-        {"╭", "FloatBorder"}, {"─", "FloatBorder"},
-        {"╮", "FloatBorder"}, {"│", "FloatBorder"},
-        {"╯", "FloatBorder"}, {"─", "FloatBorder"},
-        {"╰", "FloatBorder"}, {"│", "FloatBorder"}
-      },
+      border = false,
       -- whether the hover action window gets automatically focused
       -- default: false
       auto_focus = false,
@@ -371,6 +370,7 @@ local opts = {
     capabilities = capabilities,
     flags = {
       allow_incremental_sync = true,
+      debounce_text_changes = debounce_text_changes,
     },
     settings = {
       ["rust-analyzer"] = {
@@ -463,7 +463,10 @@ require('nvim-treesitter.configs').setup {
       node_decremental = "grm",
     },
   },
-  indent = { enable = true },
+  indent = {
+    enable = true,
+    disable = { 'python' }
+  },
   matchup = {
     enable = true,              -- mandatory, false will disable the whole extension
     disable = { "c", "ruby" },  -- optional, list of language that will be disabled
