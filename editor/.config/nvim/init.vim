@@ -61,7 +61,8 @@ if executable('rg')
 endif
 " Comments highlighting
 function! s:base16_customize() abort
-  call Base16hi("Comment", g:base16_gui0C, "", g:base16_cterm0C, "", "", "")
+  call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
+  call Base16hi('RustInlayHint', '15aabf', '', 'Blue', '', '', '')
 endfunction
 
 augroup on_change_colorschema
@@ -338,11 +339,11 @@ local opts = {
       -- default: true
       show_parameter_hints = true,
       -- prefix for parameter hints
-      -- default: "<-"
-      parameter_hints_prefix = ":",
+      -- default: '<-'
+      parameter_hints_prefix = ':',
       -- prefix for all the other hints (type, chaining)
-      -- default: "=>"
-      other_hints_prefix = "→ ",
+      -- default: '=>'
+      other_hints_prefix = '▶ ',
       -- whether to align to the lenght of the longest line in the file
       max_len_align = false,
       -- padding from the left if max_len_align is true
@@ -350,7 +351,9 @@ local opts = {
       -- whether to align to the extreme right or not
       right_align = false,
       -- padding from the right if right_align is true
-      right_align_padding = 7
+      right_align_padding = 7,
+      -- The color of the hints
+      highlight = 'RustInlayHint',
     },
     hover_actions = {
       -- the border that is used for the hover window
