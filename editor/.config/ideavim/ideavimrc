@@ -1,0 +1,55 @@
+source ~/.vimrc
+
+""" Plugins  --------------------------------
+set surround
+set commentary
+set argtextobj
+set ReplaceWithRegister
+set highlightedyank
+
+""" Plugin settings -------------------------
+let g:argtextobj_pairs="[:],(:),<:>"
+
+""" Common settings -------------------------
+set showmode
+set so=5
+set clipboard=unnamed,unnamedplus,ideaput
+
+""" Idea specific settings ------------------
+set ideajoin
+set ideaput
+set ideastatusicon=gray
+set idearefactormode=keep
+
+""" Mappings --------------------------------
+
+" GoTo code navigation.
+nnoremap <silent> gd :action GotoDeclaration<CR>
+nnoremap <silent> gs :action GotoSuperMethod<CR>
+nnoremap <silent> gy :action GotoTypeDeclaration<CR>
+nnoremap <silent> gi :action GotoImplementation<CR>
+
+" extract refactoring
+nnoremap <Leader>ei :action ExtractInterface<CR>
+nnoremap <Leader>es :action ExtractSuperclass<CR>
+nnoremap <Leader>ec :action ExtractClass<CR>
+vnoremap <Leader>ec :action ExtractClass<CR>
+nnoremap <Leader>em :action ExtractFunction<CR>
+vnoremap <Leader>em :action ExtractFunction<CR>
+
+nnoremap <leader>d :action Debug<CR>
+nnoremap <leader>rn :action RenameElement<CR>
+nnoremap <leader>c :action Stop<CR>
+nnoremap <leader>z :action ToggleDistractionFreeMode<CR>
+
+nnoremap <leader>a :action Annotate<CR>
+nnoremap <leader>h :action Vcs.ShowTabbedFileHistory<CR>
+nnoremap ]g :action GotoNextError<CR>
+nnoremap [g :action GotoPreviousError<CR>
+nnoremap <silent> <leader>s :action GotoSymbol<CR>
+
+nnoremap <leader>b :action ToggleLineBreakpoint<CR>
+nnoremap <leader>o :action FileStructurePopup<CR>
+
+" project tree mapping
+nnoremap <Leader>n :action ActivateProjectToolWindow<CR>
