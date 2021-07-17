@@ -16,7 +16,7 @@ Plug 'lyokha/vim-xkbswitch'
 " Autocompletion
 Plug 'hrsh7th/nvim-compe'
 Plug 'neovim/nvim-lspconfig'
-Plug 'hrsh7th/vim-vsnip'
+Plug 'L3MON4D3/LuaSnip'
 Plug 'rafamadriz/friendly-snippets'
 Plug 'folke/lua-dev.nvim'
 Plug 'simrat39/rust-tools.nvim'
@@ -27,7 +27,7 @@ Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 Plug 'nvim-telescope/telescope.nvim'
 " nvim-treesitter
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
 Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 " Color scheme
 Plug 'chriskempson/base16-vim'
@@ -37,7 +37,6 @@ if has('nvim')
   set guicursor=n-v-c:block-Cursor/lCursor-blinkon0,i-ci:ver25-Cursor/lCursor,r-cr:hor20-Cursor/lCursor
   set inccommand=nosplit
   noremap <C-q> :confirm qall<CR>
-  " uses built in highling_yank instead of plugin
 end
 
 " disable builtin
@@ -75,8 +74,8 @@ if has("autocmd")
   au BufReadPost * if expand('%:p') !~# '\m/\.git/' && line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 augroup highlight_yank
-    autocmd!
-    autocmd TextYankPost * silent! lua require('vim.highlight').on_yank({timeout = 250})
+  autocmd!
+  autocmd TextYankPost * silent! lua require('vim.highlight').on_yank({timeout = 250})
 augroup END
 
 " Editor settings
@@ -356,7 +355,7 @@ local opts = {
     hover_actions = {
       -- the border that is used for the hover window
       -- see vim.api.nvim_open_win()
-      border = false,
+      border = 'none',
       -- whether the hover action window gets automatically focused
       -- default: false
       auto_focus = false,
@@ -419,7 +418,7 @@ require('compe').setup {
   max_kind_width = 100,
   max_menu_width = 100,
   documentation = {
-    border = { '', '' ,'', ' ', '', '', '', ' ' }, -- the border option is the same as `|help nvim_open_win|`
+    border = 'none', -- the border option is the same as `|help nvim_open_win|`
     winhighlight = "NormalFloat:CompeDocumentation,FloatBorder:CompeDocumentationBorder",
     max_width = 120,
     min_width = 60,
@@ -432,9 +431,9 @@ require('compe').setup {
     calc = false,
     nvim_lsp = true,
     nvim_lua = true,
-    vsnip = true,
+    vsnip = false,
     ultisnips = false,
-    luasnip = false,
+    luasnip = true,
   },
 }
 
@@ -532,7 +531,12 @@ require('telescope').load_extension('fzf')
 -- gitsings
 require('gitsigns').setup()
 
--- vim-snip
+-- LuaSnip settings
+local luasnip = require('luasnip')
+luasnip.config.set_config {
+  updateevents = 'TextChanged,TextChangedI'
+}
+require('luasnip.loaders.from_vscode').lazy_load()
 local t = function(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
@@ -545,29 +549,28 @@ end
 --- jump to prev/next snippet's placeholder
 _G.tab_complete = function()
   if vim.fn.pumvisible() == 1 then
-    return t "<C-n>"
-  elseif vim.fn['vsnip#available'](1) == 1 then
-    return t "<Plug>(vsnip-expand-or-jump)"
+    return t '<C-n>'
+  elseif luasnip.expand_or_jumpable() then
+    return t '<Plug>luasnip-expand-or-jump'
   elseif check_back_space() then
-    return t "<Tab>"
+    return t '<Tab>'
   else
     return vim.fn['compe#complete']()
   end
 end
 _G.s_tab_complete = function()
   if vim.fn.pumvisible() == 1 then
-    return t "<C-p>"
-  elseif vim.fn['vsnip#jumpable'](-1) == 1 then
-    return t "<Plug>(vsnip-jump-prev)"
+    return t '<C-p>'
+  elseif luasnip.jumpable(-1) then
+    return t '<Plug>luasnip-jump-prev'
   else
-    -- If <S-Tab> is not working in your terminal, change it to <C-h>
-    return t "<S-Tab>"
+    return t '<S-Tab>'
   end
 end
-vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
+vim.api.nvim_set_keymap('i', '<Tab>', 'v:lua.tab_complete()', {expr = true})
+vim.api.nvim_set_keymap('s', '<Tab>', 'v:lua.tab_complete()', {expr = true})
+vim.api.nvim_set_keymap('i', '<S-Tab>', 'v:lua.s_tab_complete()', {expr = true})
+vim.api.nvim_set_keymap('s', '<S-Tab>', 'v:lua.s_tab_complete()', {expr = true})
 EOF
 " end lua config
 
