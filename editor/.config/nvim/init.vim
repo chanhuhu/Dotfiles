@@ -62,12 +62,12 @@ endif
 " Comments highlighting
 function! s:base16_customize() abort
   call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
-  call Base16hi('RustInlayHint', '15aabf', '', 'Blue', '', '', '')
+  call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', '', '')
 endfunction
 
 augroup on_change_colorschema
   autocmd!
-  autocmd ColorScheme * call s:base16_customize()
+  autocmd ColorScheme * silent! call s:base16_customize()
 augroup END
 " Jump to last edit position on opening file
 if has("autocmd")
@@ -83,7 +83,6 @@ augroup END
 set nocompatible
 filetype plugin indent on
 syntax on
-set completeopt=menuone,noselect
 set encoding=utf-8
 set nobackup
 set nowritebackup
@@ -215,7 +214,7 @@ nnoremap k gk
 
 " Find files
 nnoremap <C-p> <cmd>Telescope git_files<CR>
-nnoremap <leader>f <cmd>Telescope find_files<CR>
+nnoremap <leader>ff <cmd>Telescope find_files<CR>
 nnoremap <leader>g <cmd>Telescope live_grep<CR>
 nnoremap <leader>; <cmd>Telescope buffers<CR>
 nnoremap <leader>h <cmd>Telescope help_tags<CR>
@@ -439,6 +438,7 @@ require('compe').setup {
     luasnip = true,
   },
 }
+vim.opt.completeopt = 'menuone,noselect'
 
 -- treesitter
 require('nvim-treesitter.configs').setup {
@@ -456,15 +456,6 @@ require('nvim-treesitter.configs').setup {
   },
   autotag = { enable = true },
   highlight = { enable = true },
-  incremental_selection = {
-    enable = true,
-    keymaps = {
-      init_selection = "gnn",
-      node_incremental = "grn",
-      scope_incremental = "grc",
-      node_decremental = "grm",
-    },
-  },
   indent = {
     enable = true,
     disable = { 'python' }

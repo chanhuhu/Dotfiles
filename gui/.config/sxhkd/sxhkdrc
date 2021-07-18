@@ -30,6 +30,18 @@ XF86Audio{Raise,Lower}Volume
 XF86Audio{Play,Next,Prev}
   playerctl {play-pause,next,previous}
 
+XF86Launch4
+  asusctl profile -n
+
+XF86Launch2
+  asusctl led-mode -p
+
+XF86Launch3
+  asusctl led-mode -n
+
+XF86KbdBrightness{Up,Down}
+  asusctl --kbd-bright {high,off}
+
 #
 # bspwm hotkeys
 #
