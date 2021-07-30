@@ -27,8 +27,8 @@ Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 Plug 'nvim-telescope/telescope.nvim'
 " nvim-treesitter
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
-Plug 'nvim-treesitter/nvim-treesitter-textobjects'
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': '0.5-compat', 'do': ':TSUpdate' }
+Plug 'nvim-treesitter/nvim-treesitter-textobjects', { 'branch': '0.5-compat' }
 " Color scheme
 Plug 'chriskempson/base16-vim'
 call plug#end()
@@ -64,7 +64,6 @@ function! s:base16_customize() abort
   call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
   call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', '', '')
 endfunction
-
 augroup on_change_colorschema
   autocmd!
   autocmd ColorScheme * silent! call s:base16_customize()
@@ -76,7 +75,7 @@ if has("autocmd")
 endif
 augroup highlight_yank
   autocmd!
-  autocmd TextYankPost * silent! lua require('vim.highlight').on_yank({timeout = 250})
+  autocmd TextYankPost * silent! lua require('vim.highlight').on_yank()
 augroup END
 
 " Editor settings
@@ -109,7 +108,8 @@ set diffopt+=indent-heuristic
 " Folds
 set foldexpr=nvim_treesitter#foldexpr()
 set foldmethod=expr
-set nofoldenable
+set foldlevel=20
+set foldlevelstart=20
 
 " Window spliting and buffers
 set splitright

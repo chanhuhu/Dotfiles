@@ -1,0 +1,17 @@
+#!/bin/bash
+
+declare suf=""
+declare out=$1
+
+if [[ -z "$out" ]]; then
+  usageIn "open <out>"
+  exit 1
+fi
+
+if [[ ! -r "$out" ]]; then
+  if [[ ! "$out" =~ ^http ]]; then
+    out=https://$out
+  fi
+fi
+
+exec xdg-open "$out"
