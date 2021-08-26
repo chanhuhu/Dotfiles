@@ -13,9 +13,11 @@ Plug 'editorconfig/editorconfig-vim'
 Plug 'justinmk/vim-sneak'
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'lyokha/vim-xkbswitch'
+Plug 'windwp/nvim-autopairs'
 " Autocompletion
 Plug 'L3MON4D3/LuaSnip'
 Plug 'folke/lua-dev.nvim'
+Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/cmp-nvim-lua'
 Plug 'hrsh7th/cmp-path'
@@ -217,7 +219,7 @@ nnoremap j gj
 nnoremap k gk
 
 " Find files
-nnoremap <C-p> <cmd>Telescope find_files<CR>
+nnoremap <C-p> <cmd>lua project_files()<CR>
 nnoremap <leader>g <cmd>Telescope live_grep<CR>
 nnoremap <leader>; <cmd>Telescope buffers<CR>
 nnoremap <leader>h <cmd>Telescope help_tags<CR>
@@ -404,7 +406,7 @@ cmp.setup {
   completion = {
     completeopt = 'menuone,noselect',
   },
-  preselect = 'none',
+  -- preselect = cmp.PreselectMode.None,
   snippet = {
     expand = function(args)
       require('luasnip').lsp_expand(args.body)
@@ -417,10 +419,6 @@ cmp.setup {
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.close(),
-    ['<CR>'] = cmp.mapping.confirm {
-      behavior = cmp.ConfirmBehavior.Replace,
-      select = true,
-    },
     ['<Tab>'] = function(fallback)
       if vim.fn.pumvisible() == 1 then
         vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<C-n>', true, true, true), 'n')
@@ -444,8 +442,16 @@ cmp.setup {
     { name = 'luasnip' },
     { name = 'nvim_lsp' },
     { name = 'nvim_lua' },
+    { name = 'buffer' },
     { name = 'path' },
   },
+}
+
+-- you need setup cmp first put this after cmp.setup()
+require('nvim-autopairs').setup()
+require("nvim-autopairs.completion.cmp").setup {
+  map_cr = true, --  map <CR> on insert mode
+  map_complete = true, -- it will auto insert `(` after select function or method item
 }
 
 -- treesitter
@@ -503,7 +509,8 @@ require('nvim-treesitter.configs').setup {
 }
 
 -- telescope
-require('telescope').setup {
+local telescope = require('telescope')
+telescope.setup {
   extensions = {
     fzf = {
       fuzzy = true,
@@ -528,7 +535,13 @@ require('telescope').setup {
     },
   },
 }
-require('telescope').load_extension('fzf')
+telescope.load_extension('fzf')
+_G.project_files = function()
+  local opts = {} -- define here if you want to define something
+  local builtin = require('telescope.builtin')
+  local ok = pcall(builtin.git_files, opts)
+  if not ok then builtin.find_files(opts) end
+end
 
 -- gitsings
 require('gitsigns').setup()
