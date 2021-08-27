@@ -14,6 +14,7 @@ Plug 'justinmk/vim-sneak'
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'lyokha/vim-xkbswitch'
 Plug 'windwp/nvim-autopairs'
+Plug 'windwp/nvim-ts-autotag'
 " Autocompletion
 Plug 'L3MON4D3/LuaSnip'
 Plug 'folke/lua-dev.nvim'
@@ -264,9 +265,6 @@ local on_attach = function(client, bufnr)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
   end
 end
--- Enable (broadcasting) snippet capability for completion
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
 local lsp_servers = {
@@ -274,10 +272,18 @@ local lsp_servers = {
   'html',
   'jsonls',
   'pyright',
+  'sumneko_lua',
+  'tailwindcss',
   'tsserver',
+  'vuels',
 }
-for _, lsp in ipairs(lsp_servers) do
-  lspconfig[lsp].setup {
+
+-- config that activates keymaps and enables snippet support
+local function make_config()
+  -- Enable (broadcasting) snippet capability for completion
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
+  return {
     on_attach = on_attach,
     capabilities = capabilities,
     flags = {
@@ -287,21 +293,24 @@ for _, lsp in ipairs(lsp_servers) do
   }
 end
 
--- lua development
-local sumneko_root_path = vim.fn.stdpath('data') .. '/lua-language-server'
-local sumneko_binary = sumneko_root_path .. '/bin/Linux/lua-language-server'
-local luadev = require('lua-dev').setup {
-  lspconfig = {
-    cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
-    on_attach = on_attach,
-    capabilities = capabilities,
-    flags = {
-      allow_incremental_sync = true,
-      debounce_text_changes = debounce_text_changes,
-    },
-  },
-}
-lspconfig.sumneko_lua.setup(luadev)
+for _, lsp in ipairs(lsp_servers) do
+  local config = make_config()
+
+  if lsp == 'sumneko_lua' then
+    -- lua development
+    local sumneko_root_path = vim.fn.stdpath('data') .. '/lua-language-server'
+    local sumneko_binary = sumneko_root_path .. '/bin/Linux/lua-language-server'
+    local luadev = require('lua-dev').setup {
+      lspconfig = {
+        cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
+      },
+    }
+    config = vim.tbl_deep_extend('force', {}, config, luadev)
+    
+  end
+
+  lspconfig[lsp].setup(config)
+end
 
 -- rust-tools
 local opts = {

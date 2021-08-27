@@ -11,15 +11,12 @@ if executable('rg')
   set grepprg=rg\ --no-heading\ --vimgrep
   set grepformat=%f:%l:%c:%m
 endif
+
 " Editor settings
 set nocompatible
 filetype plugin indent on
 syntax on
-set completeopt=menuone,noselect
-" You will have bad experience for diagnostic messages when it's default 4000.
-set updatetime=250
 set encoding=utf-8
-set hidden
 set nobackup
 set nowritebackup
 set noswapfile
@@ -30,12 +27,21 @@ set printencoding=utf-8
 set printfont=:h10
 set printoptions=paper:letter
 set scrolloff=2
-set timeoutlen=250 " http://stackoverflow.com/questions/2158516/delay-before-o-opens-a-new-line
 set signcolumn=yes
+
+" Timings
+set hidden
+set timeoutlen=250 " http://stackoverflow.com/questions/2158516/delay-before-o-opens-a-new-line
+set updatetime=250 " You will have bad experience for diagnostic messages when it's default 4000.
 
 " Sane splits
 set splitright
 set splitbelow
+
+" Make diffing better: https://vimways.org/2018/the-power-of-diff/
+set diffopt+=iwhite " No whitespace in vimdiff
+set diffopt+=algorithm:patience
+set diffopt+=indent-heuristic
 
 " Permanent undo
 set undodir=~/.cache/vim/undo
@@ -70,25 +76,23 @@ set gdefault
 
 " GUI settings
 set guioptions-=T " Remove toolbar
-set vb t_vb= " No more beeps
 set backspace=2 " Backspace over newlines
 set nofoldenable
+set cmdheight=2
+set colorcolumn=80 " and give me a colored column
+set laststatus=2
+set mouse=a " Enable mouse usage (all modes) in terminals
+set number " Also show current absolute line
+set relativenumber " Relative line numbers
+set shortmess+=c " don't give |ins-completion-menu| messages.
+set showcmd " Show (partial) command in status line.
+set textwidth=79
 set ttyfast
+set vb t_vb= " No more beeps
+
 " https://github.com/vim/vim/issues/1735#issuecomment-383353563
 set lazyredraw
 set synmaxcol=500
-set laststatus=2
-set relativenumber " Relative line numbers
-set number " Also show current absolute line
-set diffopt+=iwhite " No whitespace in vimdiff
-" Make diffing better: https://vimways.org/2018/the-power-of-diff/
-set diffopt+=algorithm:patience
-set diffopt+=indent-heuristic
-set textwidth=79
-set colorcolumn=80 " and give me a colored column
-set showcmd " Show (partial) command in status line.
-set mouse=a " Enable mouse usage (all modes) in terminals
-set shortmess+=c " don't give |ins-completion-menu| messages.
 
 " Show those damn hidden characters
 " Verbose: set listchars=nbsp:¬,eol:¶,extends:»,precedes:«,trail:•
