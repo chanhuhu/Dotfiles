@@ -408,6 +408,14 @@ require('rust-tools').setup(opts)
 -- LuaSnip settings
 local luasnip = require('luasnip')
 require('luasnip.loaders.from_vscode').lazy_load()
+local t = function(str)
+  return vim.api.nvim_replace_termcodes(str, true, true, true)
+end
+local check_back_space = function()
+  local col = vim.fn.col '.' - 1
+  return col == 0 or vim.fn.getline('.'):sub(col, col):match '%s' ~= nil
+end
+local luasnip = require("luasnip")
 
 -- nvim-cmp setup
 local cmp = require('cmp')
@@ -415,10 +423,23 @@ cmp.setup {
   completion = {
     completeopt = 'menuone,noselect',
   },
-  -- preselect = cmp.PreselectMode.None,
+  formatting = {
+    format = function(entry, vim_item)
+      -- set a name for each source
+      vim_item.menu = ({
+        buffer = "[Buffer]",
+        nvim_lsp = "[LSP]",
+        luasnip = "[LuaSnip]",
+        nvim_lua = "[Lua]",
+        latex_symbols = "[Latex]",
+      })[entry.source.name]
+      return vim_item
+    end,
+  },
+  preselect = cmp.PreselectMode.None,
   snippet = {
     expand = function(args)
-      require('luasnip').lsp_expand(args.body)
+      luasnip.lsp_expand(args.body)
     end,
   },
   mapping = {
@@ -428,24 +449,32 @@ cmp.setup {
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.close(),
-    ['<Tab>'] = function(fallback)
+    ['<Tab>'] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
-        vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<C-n>', true, true, true), 'n')
+        vim.fn.feedkeys(t('<C-n>'), 'n')
       elseif luasnip.expand_or_jumpable() then
-        vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<Plug>luasnip-expand-or-jump', true, true, true), '')
+        vim.fn.feedkeys(t('<Plug>luasnip-expand-or-jump'), '')
+      elseif check_back_space() then
+        vim.fn.feedkeys(t('<Tab>'), 'n')
       else
         fallback()
       end
-    end,
-    ['<S-Tab>'] = function(fallback)
+    end, {
+      'i',
+      's',
+    }),
+    ['<S-Tab>'] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
-        vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<C-p>', true, true, true), 'n')
+        vim.fn.feedkeys(t('<C-p>'), 'n')
       elseif luasnip.jumpable(-1) then
-        vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<Plug>luasnip-jump-prev', true, true, true), '')
+        vim.fn.feedkeys(t('<Plug>luasnip-jump-prev'), '')
       else
         fallback()
       end
-    end,
+    end, {
+      'i',
+      's',
+    }),
   },
   sources = {
     { name = 'luasnip' },
@@ -461,6 +490,7 @@ require('nvim-autopairs').setup()
 require("nvim-autopairs.completion.cmp").setup {
   map_cr = true, --  map <CR> on insert mode
   map_complete = true, -- it will auto insert `(` after select function or method item
+  auto_select = true -- automatically select the first item
 }
 
 -- treesitter
