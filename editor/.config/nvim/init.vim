@@ -46,9 +46,6 @@ if has('nvim')
   noremap <C-q> :confirm qall<CR>
 end
 
-" disable builtin
-let g:loaded_matchit = 1
-
 " deal with colors
 hi Normal ctermbg=NONE
 if !has('gui_running')
@@ -84,6 +81,9 @@ augroup highlight_yank
   autocmd!
   autocmd TextYankPost * silent! lua require('vim.highlight').on_yank()
 augroup END
+
+" auto-format
+autocmd BufWritePre *.rs lua vim.lsp.buf.formatting_sync(nil, 100)
 
 " Editor settings
 set nocompatible
@@ -377,9 +377,6 @@ local luasnip = require("luasnip")
 -- nvim-cmp setup
 local cmp = require('cmp')
 cmp.setup {
-  completion = {
-    completeopt = 'menuone,noselect',
-  },
   formatting = {
     format = function(entry, vim_item)
       -- set a name for each source
@@ -437,18 +434,15 @@ cmp.setup {
     { name = 'luasnip' },
     { name = 'nvim_lsp' },
     { name = 'nvim_lua' },
-    { name = 'buffer' },
     { name = 'path' },
+    { name = 'buffer', keyword_length = 4 },
   },
 }
 
 -- you need setup cmp first put this after cmp.setup()
 require('nvim-autopairs').setup()
-require("nvim-autopairs.completion.cmp").setup {
-  map_cr = true, --  map <CR> on insert mode
-  map_complete = true, -- it will auto insert `(` after select function or method item
-  auto_select = true -- automatically select the first item
-}
+require("nvim-autopairs.completion.cmp").setup() 
+require('nvim-autopairs').remove_rule("'")
 
 -- treesitter
 require('nvim-treesitter.configs').setup {

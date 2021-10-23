@@ -52,7 +52,7 @@ font-3 = "Noto Sans Symbols2:size=10;1"
 
 modules-left = date bspwm xwindow
 modules-center =
-modules-right = xkeyboard pulseaudio memory cpu wlan eth battery 
+modules-right = xkeyboard pulseaudio memory cpu wlan eth battery temperature
 
 tray-position = right
 tray-padding = 2
@@ -172,7 +172,6 @@ label = %date% %time%
 
 [module/pulseaudio]
 type = internal/pulseaudio
-sink = alsa_output.pci-0000_12_00.3.analog-stereo
 
 ; Use PA_VOLUME_UI_MAX (~153%) if true, or PA_VOLUME_NORM (100%) if false
 ; Default: true
@@ -238,6 +237,26 @@ ramp-capacity-foreground = ${colors.foreground-alt}
 label-charging = ⚡ %percentage%%
 label-discharging = %percentage%%
 label-full = " ☀ "
+
+[module/temperature]
+type = internal/temperature
+thermal-zone = 0
+warn-temperature = 90
+
+format = <ramp> <label>
+format-underline = #f50a4d
+format-warn = <ramp> <label-warn>
+format-warn-underline = ${self.format-underline}
+
+label = %temperature-c%
+label-warn = %temperature-c%
+label-warn-foreground = ${colors.secondary}
+
+ramp-0 = 
+ramp-1 = 
+ramp-2 = 
+ramp-foreground = ${colors.foreground-alt}
+
 
 [settings]
 screenchange-reload = true
