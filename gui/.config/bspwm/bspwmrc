@@ -22,4 +22,12 @@ bspc rule -a polybar border=off manage=off
 bspc rule -a sxiv state=flaoting center=true
 bspc rule -a ulauncher focus=on
 
+steam_path=$HOME/.steam/steam
+# this sed command removes everything but the digits
+game_id=$(ls $steam_path/steamapps/appmanifest_*.acf | sed 's/[^0-9]*//g')
+
+for id in $game_id; do
+    bspc rule -a steam_app_$id desktop=^10 state=fullscreen
+done
+
 wmname LG3D

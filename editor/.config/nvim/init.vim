@@ -16,16 +16,11 @@ Plug 'lyokha/vim-xkbswitch'
 Plug 'windwp/nvim-autopairs'
 Plug 'windwp/nvim-ts-autotag'
 " Autocompletion
-Plug 'L3MON4D3/LuaSnip'
-Plug 'folke/lua-dev.nvim'
 Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
-Plug 'hrsh7th/cmp-nvim-lua'
 Plug 'hrsh7th/cmp-path'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'neovim/nvim-lspconfig'
-Plug 'rafamadriz/friendly-snippets'
-Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'simrat39/rust-tools.nvim'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
@@ -34,8 +29,8 @@ Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 Plug 'nvim-telescope/telescope.nvim'
 " nvim-treesitter
-Plug 'nvim-treesitter/nvim-treesitter', { 'branch': '0.5-compat', 'do': ':TSUpdate' }
-Plug 'nvim-treesitter/nvim-treesitter-textobjects', { 'branch': '0.5-compat' }
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
+Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 " Color scheme
 Plug 'chriskempson/base16-vim'
 call plug#end()
@@ -88,7 +83,6 @@ autocmd BufWritePre *.rs lua vim.lsp.buf.formatting_sync(nil, 100)
 " Editor settings
 set nocompatible
 filetype plugin indent on
-syntax on
 set encoding=utf-8
 set nobackup
 set nowritebackup
@@ -272,7 +266,6 @@ local lsp_servers = {
   'html',
   'jsonls',
   'pyright',
-  'sumneko_lua',
   'tailwindcss',
   'tsserver',
   'vuels',
@@ -295,19 +288,6 @@ end
 
 for _, lsp in ipairs(lsp_servers) do
   local config = make_config()
-
-  if lsp == 'sumneko_lua' then
-    -- lua development
-    local sumneko_root_path = vim.fn.stdpath('data') .. '/lua-language-server'
-    local sumneko_binary = sumneko_root_path .. '/bin/Linux/lua-language-server'
-    local luadev = require('lua-dev').setup {
-      lspconfig = {
-        cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
-      },
-    }
-    config = vim.tbl_deep_extend('force', {}, luadev, config)
-  end
-
   lspconfig[lsp].setup(config)
 end
 
@@ -362,17 +342,10 @@ local opts = {
 }
 require('rust-tools').setup(opts)
 
--- LuaSnip settings
-local luasnip = require('luasnip')
-require('luasnip.loaders.from_vscode').lazy_load()
-local t = function(str)
-  return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
 local check_back_space = function()
   local col = vim.fn.col '.' - 1
   return col == 0 or vim.fn.getline('.'):sub(col, col):match '%s' ~= nil
 end
-local luasnip = require("luasnip")
 
 -- nvim-cmp setup
 local cmp = require('cmp')
@@ -382,18 +355,10 @@ cmp.setup {
       -- set a name for each source
       vim_item.menu = ({
         buffer = "[Buffer]",
-        latex_symbols = "[Latex]",
-        luasnip = "[LuaSnip]",
         nvim_lsp = "[LSP]",
-        nvim_lua = "[Lua]",
         path = "[Path]",
       })[entry.source.name]
       return vim_item
-    end,
-  },
-  snippet = {
-    expand = function(args)
-      luasnip.lsp_expand(args.body)
     end,
   },
   mapping = {
@@ -406,8 +371,6 @@ cmp.setup {
     ['<Tab>'] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
         vim.fn.feedkeys(t('<C-n>'), 'n')
-      elseif luasnip.expand_or_jumpable() then
-        vim.fn.feedkeys(t('<Plug>luasnip-expand-or-jump'), '')
       elseif check_back_space() then
         vim.fn.feedkeys(t('<Tab>'), 'n')
       else
@@ -420,8 +383,6 @@ cmp.setup {
     ['<S-Tab>'] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
         vim.fn.feedkeys(t('<C-p>'), 'n')
-      elseif luasnip.jumpable(-1) then
-        vim.fn.feedkeys(t('<Plug>luasnip-jump-prev'), '')
       else
         fallback()
       end
@@ -429,11 +390,13 @@ cmp.setup {
       'i',
       's',
     }),
+    ['<CR>'] = cmp.mapping.confirm({
+      behavior = cmp.ConfirmBehavior.Insert,
+      select = true,
+    }),
   },
   sources = {
-    { name = 'luasnip' },
     { name = 'nvim_lsp' },
-    { name = 'nvim_lua' },
     { name = 'path' },
     { name = 'buffer', keyword_length = 4 },
   },
@@ -441,8 +404,9 @@ cmp.setup {
 
 -- you need setup cmp first put this after cmp.setup()
 require('nvim-autopairs').setup()
-require("nvim-autopairs.completion.cmp").setup() 
+local cmp_autopairs = require('nvim-autopairs.completion.cmp')
 require('nvim-autopairs').remove_rule("'")
+cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 
 -- treesitter
 require('nvim-treesitter.configs').setup {
