@@ -1,10 +1,3 @@
-" Install vim-plug if not found
-if empty(glob('~/.local/share/nvim/site/autoload'))
-  silent !curl -fLo ~/.local/share/nvim/site/autoload --create-dirs
-        \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-endif
-
 call plug#begin('~/.local/share/nvim/plugged')
 " Improve editor
 Plug 'airblade/vim-rooter'
@@ -16,12 +9,15 @@ Plug 'lyokha/vim-xkbswitch'
 Plug 'windwp/nvim-autopairs'
 Plug 'windwp/nvim-ts-autotag'
 " Autocompletion
+Plug 'L3MON4D3/LuaSnip'
 Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/cmp-path'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'neovim/nvim-lspconfig'
+Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'simrat39/rust-tools.nvim'
+Plug 'williamboman/nvim-lsp-installer'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'nvim-lua/plenary.nvim'
@@ -59,14 +55,8 @@ if executable('rg')
   set grepformat=%f:%l:%c:%m
 endif
 " Comments highlighting
-function! s:base16_customize() abort
-  call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
-  call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', '', '')
-endfunction
-augroup on_change_colorschema
-  autocmd!
-  autocmd ColorScheme * silent! call s:base16_customize()
-augroup END
+call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
+call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', '', '')
 " Jump to last edit position on opening file
 if has("autocmd")
   " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
@@ -148,6 +138,7 @@ set smartcase
 set gdefault
 
 " GUI settings
+syntax on
 set guioptions-=T " Remove toolbar
 set backspace=2 " Backspace over newlines
 set cmdheight=2
@@ -221,7 +212,6 @@ nnoremap <leader>h <cmd>Telescope help_tags<CR>
 
 lua <<EOF
 -- lspconfig
-local debounce_text_changes = 500
 local lspconfig = require('lspconfig')
 -- Use an on_attach function to only map the following keys
 -- after the language server attaches to the current buffer
@@ -243,7 +233,7 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").lsp_document_diagnostics()<CR>', opts)
   buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
   buf_set_keymap('n', '<leader>o', '<cmd>lua require("telescope.builtin").lsp_document_symbols()<CR>', opts)
-  buf_set_keymap('n', '<leader>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
+  buf_set_keymap('n', '<leader>q', '<cmd>lua vim.diagnostic.set_loclist()<CR>', opts)
   buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
   buf_set_keymap('n', '<leader>s', '<cmd>lua require("telescope.builtin").lsp_workspace_symbols()<CR>', opts)
   buf_set_keymap('n', '<leader>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
@@ -251,8 +241,8 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', '<leader>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
   buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
-  buf_set_keymap('n', '[g', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
-  buf_set_keymap('n', ']g', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
+  buf_set_keymap('n', '[g', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+  buf_set_keymap('n', ']g', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
   if client.name == 'rust_analyzer' then
     buf_set_keymap('n', 'rr', '<cmd>RustRun<CR>', opts)
     buf_set_keymap('n', 'rt', '<cmd>RustRunnables<CR>', opts)
@@ -266,11 +256,12 @@ local lsp_servers = {
   'html',
   'jsonls',
   'pyright',
+  'rust_analyzer',
   'tailwindcss',
   'tsserver',
-  'vuels',
 }
 
+require("nvim-lsp-installer").setup({ automatic_installation = true })
 -- config that activates keymaps and enables snippet support
 local function make_config()
   -- Enable (broadcasting) snippet capability for completion
@@ -281,125 +272,137 @@ local function make_config()
     capabilities = capabilities,
     flags = {
       allow_incremental_sync = true,
-      debounce_text_changes = debounce_text_changes,
+      debounce_text_changes = 500,
     },
   }
 end
-
+local lsp_config = make_config()
 for _, lsp in ipairs(lsp_servers) do
-  local config = make_config()
-  lspconfig[lsp].setup(config)
-end
-
--- rust-tools
-local opts = {
-  tools = {
-    inlay_hints = {
-      parameter_hints_prefix = ':',
-      other_hints_prefix = '▶ ',
-      highlight = 'RustInlayHint',
-    },
-    hover_actions = {
-      border = 'none',
-    },
-  },
-  server = {
-    on_attach = on_attach,
-    capabilities = capabilities,
-    flags = {
-      allow_incremental_sync = true,
-      debounce_text_changes = debounce_text_changes,
-    },
-    settings = {
-      ["rust-analyzer"] = {
-        assist = {
-          importGranularity = "module",
-          importEnforceGranularity = true,
+  if lsp == 'rust_analyzer' then
+    local opts = {
+      tools = {
+        inlay_hints = {
+          parameter_hints_prefix = ':',
+          other_hints_prefix = '▶ ',
+          highlight = 'RustInlayHint',
         },
-        cargo = {
-          loadOutDirsFromCheck = true,
-          allFeatures = true,
-        },
-        procMacro = {
-          enable = true,
-        },
-        checkOnSave = {
-          command = "clippy",
-        },
-        experimental = {
-          procAttrMacros = true,
-        },
-        hoverActions = {
-          references = true,
-        },
-        lens = {
-          methodReferences = true,
-          references = true,
+        hover_actions = {
+          border = 'none',
         },
       },
-    },
-  },
-}
-require('rust-tools').setup(opts)
-
-local check_back_space = function()
-  local col = vim.fn.col '.' - 1
-  return col == 0 or vim.fn.getline('.'):sub(col, col):match '%s' ~= nil
+      server = vim.tbl_deep_extend('force', {
+        settings = {
+          ["rust-analyzer"] = {
+            assist = {
+              importGranularity = "module",
+              importEnforceGranularity = true,
+            },
+            cargo = {
+              loadOutDirsFromCheck = true,
+              allFeatures = true,
+            },
+            procMacro = {
+              enable = true,
+            },
+            checkOnSave = {
+              command = "clippy",
+            },
+            experimental = {
+              procAttrMacros = true,
+            },
+            hoverActions = {
+              references = true,
+            },
+            lens = {
+              methodReferences = true,
+              references = true,
+            },
+          },
+        },
+      }, lsp_config),
+    }
+    require('rust-tools').setup(opts)
+  else
+    lspconfig[lsp].setup(lsp_config)
+  end
 end
+
+local luasnip = require('luasnip')
+-- Keymaps for Luasnip
+vim.keymap.set({ "i", "s" }, "<C-k>", function()
+	if luasnip.expand_or_jumpable() then
+		luasnip.expand_or_jump()
+	end
+end, { silent = true })
+
+vim.keymap.set({ "i", "s" }, "<C-j>", function()
+	if luasnip.jumpable(-1) then
+		luasnip.jump(-1)
+	end
+end, { silent = true })
+
+vim.keymap.set("i", "<C-l>", function()
+	if luasnip.choice_active() then
+		luasnip.change_choice(1)
+	end
+end)
 
 -- nvim-cmp setup
 local cmp = require('cmp')
+local has_words_before = function()
+  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+  return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+end
 cmp.setup {
   formatting = {
     format = function(entry, vim_item)
       -- set a name for each source
       vim_item.menu = ({
-        buffer = "[Buffer]",
-        nvim_lsp = "[LSP]",
-        path = "[Path]",
+        buffer = '[Buffer]',
+        nvim_lsp = '[LSP]',
+        path = '[Path]',
       })[entry.source.name]
       return vim_item
     end,
   },
-  mapping = {
-    ['<C-p>'] = cmp.mapping.select_prev_item(),
-    ['<C-n>'] = cmp.mapping.select_next_item(),
-    ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+  mapping = cmp.mapping.preset.insert({
+    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
-    ['<C-e>'] = cmp.mapping.close(),
+    ['<CR>'] = cmp.mapping.confirm({ select = true }),
     ['<Tab>'] = cmp.mapping(function(fallback)
-      if vim.fn.pumvisible() == 1 then
-        vim.fn.feedkeys(t('<C-n>'), 'n')
-      elseif check_back_space() then
-        vim.fn.feedkeys(t('<Tab>'), 'n')
+      if cmp.visible() then
+        cmp.select_next_item()
+      elseif luasnip.expand_or_jumpable() then
+        luasnip.expand_or_jump()
+      elseif has_words_before() then
+        cmp.complete()
       else
         fallback()
       end
-    end, {
-      'i',
-      's',
-    }),
+    end, { 'i', 's' }),
     ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if vim.fn.pumvisible() == 1 then
-        vim.fn.feedkeys(t('<C-p>'), 'n')
+      if cmp.visible() then
+        cmp.select_prev_item()
+      elseif luasnip.jumpable(-1) then
+        luasnip.jump(-1)
       else
         fallback()
       end
-    end, {
-      'i',
-      's',
-    }),
-    ['<CR>'] = cmp.mapping.confirm({
-      behavior = cmp.ConfirmBehavior.Insert,
-      select = true,
-    }),
+    end, { 'i', 's' }),
+  }),
+  snippet = {
+    expand = function(args)
+      luasnip.lsp_expand(args.body)
+    end
   },
-  sources = {
+  sources = cmp.config.sources({
+    { name = 'luasnip' },
     { name = 'nvim_lsp' },
     { name = 'path' },
+  }, {
     { name = 'buffer', keyword_length = 4 },
-  },
+  }),
 }
 
 -- you need setup cmp first put this after cmp.setup()
@@ -420,7 +423,6 @@ require('nvim-treesitter.configs').setup {
     'rust',
     'tsx',
     'typescript',
-    'vue',
   },
   autotag = { enable = true },
   highlight = { enable = true },

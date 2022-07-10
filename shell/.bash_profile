@@ -63,7 +63,7 @@ $HOME/.cargo/bin:\
 $JAVA_HOME/bin:\
 $ANDROID_HOME/platform-tools:\
 $ANDROID_HOME/emulator:\
-$ANDROID_HOME/tools:\
+$ANDROID_HOME/cmdline-tools:\
 $HOME/.local/bin/scripts:\
 $HOME/.local/bin:\
 /usr/local/sbin:\
