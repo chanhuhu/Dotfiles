@@ -55,8 +55,7 @@ if executable('rg')
   set grepformat=%f:%l:%c:%m
 endif
 " Comments highlighting
-call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')
-call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', '', '')
+call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', 'bold', '')
 " Jump to last edit position on opening file
 if has("autocmd")
   " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
@@ -227,10 +226,10 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', 'gd', '<cmd>lua require("telescope.builtin").lsp_definitions()<CR>', opts)
   buf_set_keymap('n', 'gi', '<cmd>lua require("telescope.builtin").lsp_implementations()<CR>', opts)
   buf_set_keymap('n', 'gr', '<cmd>lua require("telescope.builtin").lsp_references()<CR>', opts)
-  buf_set_keymap('n', 'gy', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
-  buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', opts)
-  buf_set_keymap('v', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_range_code_actions()<CR>', opts)
-  buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").lsp_document_diagnostics()<CR>', opts)
+  buf_set_keymap('n', 'gy', '<cmd>lua require("telescope.builtin").lsp_type_definitions()<CR>', opts)
+  buf_set_keymap('n', '<leader>a', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
+  buf_set_keymap('v', '<leader>a', '<cmd>lua vim.lsp.buf.range_code_action()<CR>', opts)
+  buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").diagnostics()<CR>', opts)
   buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
   buf_set_keymap('n', '<leader>o', '<cmd>lua require("telescope.builtin").lsp_document_symbols()<CR>', opts)
   buf_set_keymap('n', '<leader>q', '<cmd>lua vim.diagnostic.set_loclist()<CR>', opts)
@@ -243,11 +242,6 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   buf_set_keymap('n', '[g', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
-  if client.name == 'rust_analyzer' then
-    buf_set_keymap('n', 'rr', '<cmd>RustRun<CR>', opts)
-    buf_set_keymap('n', 'rt', '<cmd>RustRunnables<CR>', opts)
-    buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
-  end
 end
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
@@ -279,13 +273,23 @@ end
 local lsp_config = make_config()
 for _, lsp in ipairs(lsp_servers) do
   if lsp == 'rust_analyzer' then
-    local opts = {
+    local keymap = vim.keymap.set
+    local key_opts = { noremap = true, silent = true }
+    keymap('n', 'rr', '<cmd>RustRun<CR>', key_opts)
+    keymap('n', 'rt', '<cmd>RustRunnables<CR>', key_opts)
+    keymap('n', 'J', '<cmd>RustJoinLines<CR>', key_opts)
+    require('rust-tools').setup({
       tools = {
         inlay_hints = {
           parameter_hints_prefix = ':',
           other_hints_prefix = '▶ ',
           highlight = 'RustInlayHint',
         },
+        on_initialized = function()
+          vim.cmd [[
+            autocmd BufEnter,CursorHold,InsertLeave,BufWritePost *.rs silent! lua vim.lsp.codelens.refresh()
+          ]]
+        end,
         hover_actions = {
           border = 'none',
         },
@@ -320,11 +324,11 @@ for _, lsp in ipairs(lsp_servers) do
           },
         },
       }, lsp_config),
-    }
-    require('rust-tools').setup(opts)
-  else
-    lspconfig[lsp].setup(lsp_config)
+    })
+    goto continue
   end
+  lspconfig[lsp].setup(lsp_config)
+  ::continue::
 end
 
 local luasnip = require('luasnip')
@@ -354,6 +358,7 @@ local has_words_before = function()
   return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
 cmp.setup {
+  experimental = { ghost_text = true },
   formatting = {
     format = function(entry, vim_item)
       -- set a name for each source
@@ -389,8 +394,9 @@ cmp.setup {
       else
         fallback()
       end
-    end, { 'i', 's' }),
+    end, { 'i', 's' }), h
   }),
+  preselect = cmp.PreselectMode.None,
   snippet = {
     expand = function(args)
       luasnip.lsp_expand(args.body)
@@ -406,7 +412,7 @@ cmp.setup {
 }
 
 -- you need setup cmp first put this after cmp.setup()
-require('nvim-autopairs').setup()
+require('nvim-autopairs').setup({ check_ts = true })
 local cmp_autopairs = require('nvim-autopairs.completion.cmp')
 require('nvim-autopairs').remove_rule("'")
 cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
@@ -414,6 +420,7 @@ cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 -- treesitter
 require('nvim-treesitter.configs').setup {
   ensure_installed = {
+    'bash',
     'css',
     'go',
     'html',
@@ -423,6 +430,7 @@ require('nvim-treesitter.configs').setup {
     'rust',
     'tsx',
     'typescript',
+    'vim',
   },
   autotag = { enable = true },
   highlight = { enable = true },
