@@ -14,6 +14,7 @@ Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/cmp-path'
 Plug 'hrsh7th/nvim-cmp'
+Plug 'jose-elias-alvarez/null-ls.nvim'
 Plug 'neovim/nvim-lspconfig'
 Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'simrat39/rust-tools.nvim'
@@ -242,6 +243,15 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   buf_set_keymap('n', '[g', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
+  if client.name == "tsserver" then
+    client.resolved_capabilities.document_formatting = false
+  end
+
+  if client.name == 'rust_analyzer' then
+    buf_set_keymap('n', 'rr', '<cmd>RustRun<CR>', opts)
+    buf_set_keymap('n', 'rt', '<cmd>RustRunnables<CR>', opts)
+    buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
+  end
 end
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
@@ -273,11 +283,6 @@ end
 local lsp_config = make_config()
 for _, lsp in ipairs(lsp_servers) do
   if lsp == 'rust_analyzer' then
-    local keymap = vim.keymap.set
-    local key_opts = { noremap = true, silent = true }
-    keymap('n', 'rr', '<cmd>RustRun<CR>', key_opts)
-    keymap('n', 'rt', '<cmd>RustRunnables<CR>', key_opts)
-    keymap('n', 'J', '<cmd>RustJoinLines<CR>', key_opts)
     require('rust-tools').setup({
       tools = {
         inlay_hints = {
@@ -509,6 +514,20 @@ end
 
 -- gitsings
 require('gitsigns').setup()
+
+local null_ls = require('null-ls')
+local formatting = null_ls.builtins.formatting
+local diagnostics = null_ls.builtins.diagnostics
+null_ls.setup({
+  debug = false,
+  sources = {
+    formatting.black.with { extra_args = { "--fast" } },
+    formatting.prettierd.with {
+      extra_filetypes = { "toml" },
+      extra_args = { "--no-semi", "--single-quote", "--jsx-single-quote" },
+    },
+  },
+})
 EOF
 " end lua config
 
