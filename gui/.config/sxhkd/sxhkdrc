@@ -12,7 +12,7 @@ super + a
 
 # Print screen
 Print
-  scrot '%Y-%m-%d_$wx$h.png' -e 'mv $f ~/Pictures/screenshots'
+  scrot '%Y-%m-%d-%H:%M:%S_$wx$h.png' -e 'mv $f ~/Pictures/screenshots'
 
 # make sxhkd reload its configuration files:
 super + Escape
