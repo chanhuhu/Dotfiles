@@ -15,6 +15,7 @@ Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/cmp-path'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'jose-elias-alvarez/null-ls.nvim'
+Plug 'jose-elias-alvarez/typescript.nvim'
 Plug 'neovim/nvim-lspconfig'
 Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'simrat39/rust-tools.nvim'
@@ -243,14 +244,16 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   buf_set_keymap('n', '[g', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
   buf_set_keymap('n', ']g', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
-  if client.name == "tsserver" then
-    client.resolved_capabilities.document_formatting = false
-  end
 
   if client.name == 'rust_analyzer' then
     buf_set_keymap('n', 'rr', '<cmd>RustRun<CR>', opts)
     buf_set_keymap('n', 'rt', '<cmd>RustRunnables<CR>', opts)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
+  elseif client.name == 'tsserver' then
+    client.resolved_capabilities.document_formatting = false
+    buf_set_keymap('n', '<M-i>', '<cmd>TypescriptAddMissingImports<CR>', opts)
+    buf_set_keymap('n', '<M-o>', '<cmd>TypescriptOrganizeImports<CR>', opts)
+    buf_set_keymap('n', '<F2>', '<cmd>TypescriptRenameFile<CR>', opts)
   end
 end
 -- Use a loop to conveniently call 'setup' on multiple servers and
@@ -329,6 +332,11 @@ for _, lsp in ipairs(lsp_servers) do
           },
         },
       }, lsp_config),
+    })
+    goto continue
+  elseif lsp == 'tsserver' then
+    require('typescript').setup({
+      server = lsp_config
     })
     goto continue
   end
