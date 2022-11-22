@@ -19,7 +19,6 @@ Plug 'jose-elias-alvarez/typescript.nvim'
 Plug 'neovim/nvim-lspconfig'
 Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'simrat39/rust-tools.nvim'
-Plug 'williamboman/nvim-lsp-installer'
 " Finder
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'nvim-lua/plenary.nvim'
@@ -31,6 +30,9 @@ Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
 Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 " Color scheme
 Plug 'chriskempson/base16-vim'
+" External editor tooling manager
+Plug 'williamboman/mason.nvim'
+Plug 'williamboman/mason-lspconfig.nvim'
 call plug#end()
 
 if has('nvim')
@@ -48,16 +50,16 @@ if (match($TERM, "-256color") != -1) && (match($TERM, "screen-256color") == -1)
   " screen does not (yet) support truecolor
   set termguicolors
 endif
-if filereadable(expand("~/.vimrc_background"))
-  let base16colorspace=256
-  source ~/.vimrc_background
+if exists('$BASE16_THEME')
+      \ && (!exists('g:colors_name') || g:colors_name != 'base16-$BASE16_THEME')
+    let base16colorspace=256
+    colorscheme base16-$BASE16_THEME
 endif
 if executable('rg')
   set grepprg=rg\ --no-heading\ --vimgrep
   set grepformat=%f:%l:%c:%m
 endif
-" Comments highlighting
-call Base16hi('RustInlayHint', g:base16_gui0C, '', g:base16_cterm0C, '', 'bold', '')
+
 " Jump to last edit position on opening file
 if has("autocmd")
   " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
@@ -69,7 +71,7 @@ augroup highlight_yank
 augroup END
 
 " auto-format
-autocmd BufWritePre *.rs lua vim.lsp.buf.formatting_sync(nil, 100)
+autocmd BufWritePre *.rs lua vim.lsp.buf.format{ async = false }
 
 " Editor settings
 set nocompatible
@@ -232,7 +234,7 @@ local on_attach = function(client, bufnr)
   buf_set_keymap('n', '<leader>a', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
   buf_set_keymap('v', '<leader>a', '<cmd>lua vim.lsp.buf.range_code_action()<CR>', opts)
   buf_set_keymap('n', '<leader>d', '<cmd>lua require("telescope.builtin").diagnostics()<CR>', opts)
-  buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+  buf_set_keymap('n', '<leader>f', '<cmd>lua vim.lsp.buf.format{ async = true }<CR>', opts)
   buf_set_keymap('n', '<leader>o', '<cmd>lua require("telescope.builtin").lsp_document_symbols()<CR>', opts)
   buf_set_keymap('n', '<leader>q', '<cmd>lua vim.diagnostic.set_loclist()<CR>', opts)
   buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
@@ -250,7 +252,7 @@ local on_attach = function(client, bufnr)
     buf_set_keymap('n', 'rt', '<cmd>RustRunnables<CR>', opts)
     buf_set_keymap('n', 'J', '<cmd>RustJoinLines<CR>', opts)
   elseif client.name == 'tsserver' then
-    client.resolved_capabilities.document_formatting = false
+    client.server_capabilities.documentFormattingProvider = false
     buf_set_keymap('n', '<M-i>', '<cmd>TypescriptAddMissingImports<CR>', opts)
     buf_set_keymap('n', '<M-o>', '<cmd>TypescriptOrganizeImports<CR>', opts)
     buf_set_keymap('n', '<F2>', '<cmd>TypescriptRenameFile<CR>', opts)
@@ -268,12 +270,16 @@ local lsp_servers = {
   'tsserver',
 }
 
-require("nvim-lsp-installer").setup({ automatic_installation = true })
+require('mason').setup()
+require('mason-lspconfig').setup({
+  ensure_insatlled = lsp_servers,
+  automatic_installation = true,
+})
+
 -- config that activates keymaps and enables snippet support
 local function make_config()
   -- Enable (broadcasting) snippet capability for completion
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-  capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
+  local capabilities = require('cmp_nvim_lsp').default_capabilities()
   return {
     on_attach = on_attach,
     capabilities = capabilities,

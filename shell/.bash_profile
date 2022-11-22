@@ -49,9 +49,6 @@ man() {
     man "${@}"
 }
 
-# ruby
-export GEM_HOME="$(ruby -e 'puts Gem.user_dir')"
-
 # Clean up path
 export PATH=\
 /opt/flutter/bin:\
