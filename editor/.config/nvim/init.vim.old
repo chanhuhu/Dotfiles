@@ -83,9 +83,6 @@ set noswapfile
 set nojoinspaces
 set noshowmode
 set nowrap
-set printencoding=utf-8
-set printfont=:h10
-set printoptions=paper:letter
 set scrolloff=2
 set signcolumn=yes
 
@@ -497,7 +494,7 @@ telescope.setup {
   extensions = {
     fzf = {
       fuzzy = true,
-      override_generic_sorter = false,
+      override_generic_sorter = true,
       override_file_sorter = true,
       case_mode = "smart_case",
     },
@@ -540,6 +537,7 @@ null_ls.setup({
       extra_filetypes = { "toml" },
       extra_args = { "--no-semi", "--single-quote", "--jsx-single-quote" },
     },
+    require("typescript.extensions.null-ls.code-actions"),
   },
 })
 EOF
