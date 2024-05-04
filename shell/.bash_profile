@@ -54,6 +54,7 @@ export PATH=\
 /opt/flutter/bin:\
 $GOBIN:\
 $GEM_HOME/bin:\
+$HOME/.local/share/nvim/mason/bin:\
 $HOME/.yarn/bin:\
 $HOME/.npm-global/bin:\
 $HOME/.cargo/bin:\

@@ -19,3 +19,8 @@ BASE16_SHELL="$HOME/.config/base16-shell/"
         source "$BASE16_SHELL/profile_helper.sh"
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)
+source /usr/share/nvm/init-nvm.sh
