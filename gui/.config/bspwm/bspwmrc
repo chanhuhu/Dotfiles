@@ -19,8 +19,15 @@ bspc config gapless_monocle      true
 bspc rule -a firefoxdeveloperedition desktop='^1'
 bspc rule -a jetbrains-studio center=false
 bspc rule -a polybar border=off manage=off
-bspc rule -a sxiv state=flaoting center=true
+bspc rule -a sxiv state=floating center=true
 bspc rule -a ulauncher focus=on
+bspc rule -a Lutris desktop=^10
+bspc rule -a Steam desktop=^10
+bspc rule -a leagueclientux.exe state=floating center=true desktop=^10
+bspc rule -a "league of legends.exe" desktop=^10
+bspc rule -a "ro.exe" desktop=^10
+
+ 
 
 steam_path=$HOME/.steam/steam
 # this sed command removes everything but the digits
