@@ -1,63 +1,63 @@
 -- set leader key
-vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
-vim.g.mapleader        = " "
+vim.keymap.set('n', '<Space>', '<Nop>', { silent = true })
+vim.g.mapleader = ' '
 
-vim.opt.number         = true
+vim.opt.number = true
 vim.opt.relativenumber = true
-vim.opt.ruler          = true
+vim.opt.ruler = true
 
-vim.opt.termguicolors  = true
+vim.opt.termguicolors = true
 
 -- never ever folding
-vim.opt.foldenable     = false
-vim.opt.foldmethod     = 'manual'
+vim.opt.foldenable = false
+vim.opt.foldmethod = 'manual'
 vim.opt.foldlevelstart = 99
 
 -- Indentation
-vim.opt.autoindent     = true
-vim.opt.expandtab      = true
-vim.opt.smartindent    = true
-vim.opt.smarttab       = true
-vim.opt.shiftwidth     = 2
-vim.opt.softtabstop    = 2
-vim.opt.tabstop        = 2
+vim.opt.autoindent = true
+vim.opt.expandtab = true
+vim.opt.smartindent = true
+vim.opt.smarttab = true
+vim.opt.shiftwidth = 2
+vim.opt.softtabstop = 2
+vim.opt.tabstop = 2
 
 -- keep more context on screen while scrolling
-vim.opt.scrolloff      = 2
+vim.opt.scrolloff = 2
 -- never show me line breaks if they're not there
-vim.opt.wrap           = false
+vim.opt.wrap = false
 -- always draw sign column. prevents buffer moving when adding/deleting sign
-vim.opt.signcolumn     = 'yes'
+vim.opt.signcolumn = 'yes'
 
 -- Permanent undo
-vim.opt.undofile       = true
+vim.opt.undofile = true
 
 -- keep current content top + left when splitting
-vim.opt.splitright     = true
-vim.opt.splitbelow     = true
+vim.opt.splitright = true
+vim.opt.splitbelow = true
 
 --" Decent wildmenu
 -- in completion, when there is more than one match,
 -- list all matches, and only complete to longest common match
-vim.opt.wildmode       = 'list:longest'
+vim.opt.wildmode = 'list:longest'
 -- when opening a file with a command (like :e),
 -- don't suggest files like there:
-vim.opt.wildignore     = '.hg,.svn,*~,*.png,*.jpg,*.gif,*.min.js,*.swp,*.o,vendor,dist,_site'
+vim.opt.wildignore = '.hg,.svn,*~,*.png,*.jpg,*.gif,*.min.js,*.swp,*.o,vendor,dist,_site'
 -- case-insensitive search/replace
-vim.opt.ignorecase     = true
+vim.opt.ignorecase = true
 -- unless uppercase in search term
-vim.opt.smartcase      = true
+vim.opt.smartcase = true
 -- never ever make my terminal beep
-vim.opt.vb             = true
+vim.opt.vb = true
 -- more useful diffs (nvim -d)
 --- by ignoring whitespace
-vim.opt.diffopt:append('iwhite')
+vim.opt.diffopt:append 'iwhite'
 --- and using a smarter algorithm
 --- https://vimways.org/2018/the-power-of-diff/
 --- https://stackoverflow.com/questions/32365271/whats-the-difference-between-git-diff-patience-and-git-diff-histogram
 --- https://luppeng.wordpress.com/2020/10/10/when-to-use-each-of-the-git-diff-algorithms/
-vim.opt.diffopt:append('algorithm:histogram')
-vim.opt.diffopt:append('indent-heuristic')
+vim.opt.diffopt:append 'algorithm:histogram'
+vim.opt.diffopt:append 'indent-heuristic'
 -- show more hidden characters
 -- also, show tabs nicer
 vim.opt.listchars = 'tab:^ ,nbsp:¬,extends:»,precedes:«,trail:•'
@@ -72,9 +72,11 @@ vim.keymap.set('i', '<C-บ>', '<Esc>')
 vim.keymap.set('n', '<leader><leader>', '<C-^>')
 vim.keymap.set('n', '<leader>n', '<cmd>nohlsearch<CR>')
 -- quick-open
-vim.keymap.set("n", "<C-p>", "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
+vim.keymap.set('n', '<C-p>', "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
 -- search buffers
 vim.keymap.set('n', '<leader>;', "<cmd>lua require('fzf-lua').buffers()<CR>")
+-- search text
+vim.keymap.set('n', '<leader>g', "<cmd>lua require('fzf-lua').live_grep({ cmd = 'rg --color=always --smart-case' })<CR>")
 -- quick-save
 vim.keymap.set('n', '<leader>w', '<cmd>w<cr>')
 
@@ -83,10 +85,10 @@ vim.keymap.set('n', '<leader>w', '<cmd>w<cr>')
 vim.keymap.set('n', '<leader>p', '<cmd>read !xsel --clipboard --output<cr>')
 vim.keymap.set('n', '<leader>c', '<cmd>w !xsel -ib<cr><cr>')
 
-vim.keymap.set('n', 'H', '^')
-vim.keymap.set('n', 'L', '$')
+vim.keymap.set('', 'H', '^')
+vim.keymap.set('', 'L', '$')
 
-vim.keymap.set('n', '<C-q>', "<cmd>confirm qall<CR>")
+vim.keymap.set('n', '<C-q>', '<cmd>confirm qall<CR>')
 
 -- "very magic" (less escaping needed) regexes by default
 vim.keymap.set('n', '?', '?\\v')
@@ -97,46 +99,47 @@ vim.keymap.set('c', '%s/', '%sm/')
 vim.keymap.set('n', '<leader>e', ':e <C-R>=expand("%:p:h") . "/" <cr>')
 
 -- plugin manager
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+  vim.fn.system {
+    'git',
+    'clone',
+    '--filter=blob:none',
+    'https://github.com/folke/lazy.nvim.git',
+    '--branch=stable', -- latest stable release
     lazypath,
-  })
+  }
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup({
+require('lazy').setup {
   -- main color scheme
   {
-    "wincent/base16-nvim",
-    lazy = false,    -- load at start
+    'wincent/base16-nvim',
+    lazy = false, -- load at start
     priority = 1000, -- load first
     config = function()
-      vim.cmd([[colorscheme base16-gruvbox-dark-hard]])
+      vim.cmd [[colorscheme base16-gruvbox-dark-hard]]
       vim.o.background = 'dark'
-    end
+    end,
   },
   -- quick navigation
   {
-    "ggandor/leap.nvim",
+    'ggandor/leap.nvim',
     dependencies = {
-      "tpope/vim-repeat",
+      'tpope/vim-repeat',
     },
     config = function()
+      -- remove s hotkeys
       require('leap').create_default_mappings()
-    end
+    end,
   },
   -- better %
   {
     'andymass/vim-matchup',
     config = function()
-      vim.g.matchup_matchparen_offscreen = { method = "popup" }
-    end
+      vim.g.matchup_matchparen_offscreen = { method = 'popup' }
+    end,
   },
   -- auto-cd to root of git project
   -- 'airblade/vim-rooter'
@@ -144,7 +147,7 @@ require("lazy").setup({
     'notjedi/nvim-rooter.lua',
     config = function()
       require('nvim-rooter').setup()
-    end
+    end,
   },
   -- fzf support for ^p
   {
@@ -153,8 +156,8 @@ require("lazy").setup({
       { 'junegunn/fzf', dir = '~/.fzf', build = './install --all' },
     },
     config = function()
-      require("fzf-lua").setup()
-    end
+      require('fzf-lua').setup()
+    end,
   },
   -- LSP
   {
@@ -179,9 +182,9 @@ require("lazy").setup({
         pyright = {},
         rust_analyzer = {
           settings = {
-            ["rust-analyzer"] = {
+            ['rust-analyzer'] = {
               assist = {
-                importGranularity = "module",
+                importGranularity = 'module',
                 importEnforceGranularity = true,
               },
               cargo = {
@@ -192,7 +195,7 @@ require("lazy").setup({
                 enable = true,
               },
               checkOnSave = {
-                command = "clippy",
+                command = 'clippy',
               },
               experimental = {
                 procAttrMacros = true,
@@ -205,7 +208,7 @@ require("lazy").setup({
                 references = true,
               },
             },
-          }
+          },
         },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -214,7 +217,7 @@ require("lazy").setup({
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
         tsserver = {},
-        ["tailwindcss-language-server"] = {},
+        ['tailwindcss-language-server'] = {},
         html = {},
         cssls = {},
         jsonls = {},
@@ -236,25 +239,26 @@ require("lazy").setup({
         },
       }
 
-      require("mason").setup()
+      require('mason').setup()
 
       -- add other tools here
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
-        "stylua",
-        "prettierd",
+        'stylua',
+        'prettierd',
+        'eslint_d',
       })
 
-      require("mason-tool-installer").setup { ensure_installed = ensure_installed }
+      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require("mason-lspconfig").setup {
+      require('mason-lspconfig').setup {
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
-            server.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
-            require("lspconfig")[server_name].setup(server)
-          end
-        }
+            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+            require('lspconfig')[server_name].setup(server)
+          end,
+        },
       }
 
       -- Global mappings.
@@ -291,62 +295,82 @@ require("lazy").setup({
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
         end,
       })
-    end
+    end,
+  },
+  -- Linter
+  {
+    'mfussenegger/nvim-lint',
+    event = {
+      'BufReadPre',
+      'BufNewFile',
+    },
+    config = function()
+      local lint = require 'lint'
+
+      lint.linters_by_ft = {
+        javascript = { 'eslint_d' },
+        typescript = { 'eslint_d' },
+        javascriptreact = { 'eslint_d' },
+        typescriptreact = { 'eslint_d' },
+      }
+
+      local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
+
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+        group = lint_augroup,
+        callback = function()
+          lint.try_lint()
+        end,
+      })
+
+      vim.keymap.set('n', '<leader>ll', function()
+        lint.try_lint()
+      end, { desc = 'Trigger linting for current file' })
+    end,
   },
   -- Autoformat
-  'stevearc/conform.nvim',
-  event = { "BufWritePre" },
-  cmd = { "ConformInfo" },
-  lazy = false,
-  keys = {
-    {
-      '<leader>f',
-      function()
-        require('conform').format { async = true, lsp_fallback = true }
-      end,
-      mode = '',
-      desc = '[F]ormat buffer',
+  {
+    'stevearc/conform.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
+    lazy = false,
+    keys = {
+      {
+        '<leader>f',
+        function()
+          require('conform').format { async = false, lsp_fallback = true, timeout_ms = 1000 }
+        end,
+        mode = '',
+        desc = '[F]ormat buffer',
+      },
     },
-  },
-  opts = {
-    notify_on_error = false,
-      -- format_on_save = function(bufnr)
-      --   -- Disable "format_on_save lsp_fallback" for languages that don't
-      --   -- have a well standardized coding style. You can add additional
-      --   -- languages here or re-enable it for the disabled ones.
-      --   local disable_filetypes = { c = true, cpp = true }
-      --   return {
-      --     timeout_ms = 500,
-      --     lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
-      --   }
-      -- end,
+    opts = {
+      notify_on_error = false,
       formatters_by_ft = {
-      lua = { 'stylua' },
-      -- Conform can also run multiple formatters sequentially
-      -- python = { "isort", "black" },
-      --
-      -- You can use a sub-list to tell conform to run *until* a formatter
-      -- is found.
-      javascript = { { "prettierd", "prettier" } },
+        lua = { 'stylua' },
+        javascript = { { 'prettierd', 'prettier' } },
+        typescript = { { 'prettierd', 'prettier' } },
+        javascriptreact = { { 'prettierd', 'prettier' } },
+        typescriptreact = { { 'prettierd', 'prettier' } },
+      },
     },
   },
   -- LSP-based code-completion
   {
-    "hrsh7th/nvim-cmp",
+    'hrsh7th/nvim-cmp',
     -- load cmp on InsertEnter
-    event = "InsertEnter",
+    event = 'InsertEnter',
     -- these dependencies will only be loaded when cmp loads
     -- dependencies are always lazy-loaded unless specified otherwise
     dependencies = {
-      "neovim/nvim-lspconfig",
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "hrsh7th/vim-vsnip",
+      'neovim/nvim-lspconfig',
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'hrsh7th/vim-vsnip',
     },
     config = function()
       local cmp = require 'cmp'
-      cmp.setup({
+      cmp.setup {
         preselect = cmp.PreselectMode.None,
         ---@diagnostic disable-next-line: missing-fields
         formatting = {
@@ -362,18 +386,18 @@ require("lazy").setup({
         },
         snippet = {
           expand = function(args)
-            vim.fn["vsnip#anonymous"](args.body)
+            vim.fn['vsnip#anonymous'](args.body)
           end,
         },
-        mapping = cmp.mapping.preset.insert({
+        mapping = cmp.mapping.preset.insert {
           ['<C-b>'] = cmp.mapping.scroll_docs(-4),
           ['<C-f>'] = cmp.mapping.scroll_docs(4),
           ['<C-Space>'] = cmp.mapping.complete(),
           ['<C-e>'] = cmp.mapping.abort(),
           -- Accept currently selected item.
           -- Set `select` to `false` to only confirm explicitly selected items.
-          ['<CR>'] = cmp.mapping.confirm({ select = true }),
-        }),
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+        },
         sources = cmp.config.sources({
           { name = 'nvim_lsp' },
         }, {
@@ -383,17 +407,17 @@ require("lazy").setup({
         experimental = {
           ghost_text = true,
         },
-      })
+      }
 
       -- Enable completing paths in :
       cmp.setup.cmdline(':', {
-        sources = cmp.config.sources({
-          { name = 'path' }
-        })
+        sources = cmp.config.sources {
+          { name = 'path' },
+        },
       })
-    end
+    end,
   },
-   -- Highlight, edit, and navigate code
+  -- Highlight, edit, and navigate code
   {
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
@@ -437,46 +461,40 @@ require("lazy").setup({
   },
   -- inline function signatures
   {
-    "ray-x/lsp_signature.nvim",
-    event = "VeryLazy",
+    'ray-x/lsp_signature.nvim',
+    event = 'VeryLazy',
     opts = {},
     config = function(_, opts)
       -- Get signatures (and _only_ signatures) when in argument lists.
-      require "lsp_signature".setup({
+      require('lsp_signature').setup {
         doc_lines = 0,
         handler_opts = {
-          border = "none"
+          border = 'none',
         },
-      })
-    end
+      }
+    end,
   },
   {
-    "chakrit/vim-thai-keys",
+    'chakrit/vim-thai-keys',
     lazy = false,
   },
-})
+}
 
 -- highlight yanked text
-vim.api.nvim_create_autocmd(
-  'TextYankPost',
-  {
-    pattern = '*',
-    command = 'silent! lua vim.highlight.on_yank({ timeout = 500 })'
-  }
-)
+vim.api.nvim_create_autocmd('TextYankPost', {
+  pattern = '*',
+  command = 'silent! lua vim.highlight.on_yank({ timeout = 500 })',
+})
 -- jump to last edit position on opening file
-vim.api.nvim_create_autocmd(
-  'BufReadPost',
-  {
-    pattern = '*',
-    callback = function(ev)
-      if vim.fn.line("'\"") > 1 and vim.fn.line("'\"") <= vim.fn.line("$") then
-        -- except for in git commit messages
-        -- https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
-        if not vim.fn.expand('%:p'):find('.git', 1, true) then
-          vim.cmd('exe "normal! g\'\\""')
-        end
+vim.api.nvim_create_autocmd('BufReadPost', {
+  pattern = '*',
+  callback = function(ev)
+    if vim.fn.line '\'"' > 1 and vim.fn.line '\'"' <= vim.fn.line '$' then
+      -- except for in git commit messages
+      -- https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
+      if not vim.fn.expand('%:p'):find('.git', 1, true) then
+        vim.cmd 'exe "normal! g\'\\""'
       end
     end
-  }
-)
+  end,
+})
