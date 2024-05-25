@@ -28,6 +28,8 @@ export FZF_DEFAULT_COMMAND="fd --type f --follow"
 export FZF_CTRL_T_COMMAND="fd --type f --follow"
 export FZF_DEFAULT_OPTS="--height 50%"
 
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
+
 # Less Colors for Man Pages
 man() {
     # mb = begin blinking

@@ -6,7 +6,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.ruler = true
 
-vim.opt.termguicolors = true
+-- vim.opt.termguicolors = true
 
 -- never ever folding
 vim.opt.foldenable = false
@@ -76,7 +76,7 @@ vim.keymap.set('n', '<C-p>', "<cmd>lua require('fzf-lua').files()<CR>", { silent
 -- search buffers
 vim.keymap.set('n', '<leader>;', "<cmd>lua require('fzf-lua').buffers()<CR>")
 -- search text
-vim.keymap.set('n', '<leader>g', "<cmd>lua require('fzf-lua').live_grep({ cmd = 'rg --color=always --smart-case' })<CR>")
+vim.keymap.set('n', '<leader>g', "<cmd>lua require('fzf-lua').live_grep({ cmd = 'rg --column --line-number --no-heading --color=always --smart-case' })<CR>")
 -- quick-save
 vim.keymap.set('n', '<leader>w', '<cmd>w<cr>')
 
@@ -119,8 +119,12 @@ require('lazy').setup {
     lazy = false, -- load at start
     priority = 1000, -- load first
     config = function()
-      vim.cmd [[colorscheme base16-gruvbox-dark-hard]]
-      vim.o.background = 'dark'
+      if vim.env.BASE16_THEME then
+        if not vim.g.colors_name or vim.g.colors_name ~= 'base16-' .. vim.env.BASE16_THEME then
+          vim.g.base16colorspace = 256
+          vim.cmd('colorscheme base16-' .. vim.env.BASE16_THEME)
+        end
+      end
     end,
   },
   -- quick navigation
@@ -142,7 +146,6 @@ require('lazy').setup {
     end,
   },
   -- auto-cd to root of git project
-  -- 'airblade/vim-rooter'
   {
     'notjedi/nvim-rooter.lua',
     config = function()
@@ -156,7 +159,7 @@ require('lazy').setup {
       { 'junegunn/fzf', dir = '~/.fzf', build = './install --all' },
     },
     config = function()
-      require('fzf-lua').setup()
+      require('fzf-lua').setup { 'fzf-native' }
     end,
   },
   -- LSP
@@ -216,7 +219,37 @@ require('lazy').setup {
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        tsserver = {},
+        tsserver = {
+          settings = {
+            typescript = {
+              inlayHints = {
+                includeInlayEnumMemberValueHints = true,
+                includeInlayFunctionLikeReturnTypeHints = true,
+                includeInlayFunctionParameterTypeHints = true,
+                includeInlayParameterNameHints = 'literal',
+                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                includeInlayPropertyDeclarationTypeHints = true,
+                includeInlayVariableTypeHints = false,
+                includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+              },
+            },
+            javascript = {
+              inlayHints = {
+                includeInlayEnumMemberValueHints = true,
+                includeInlayFunctionLikeReturnTypeHints = true,
+                includeInlayFunctionParameterTypeHints = true,
+                includeInlayParameterNameHints = 'literal',
+                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                includeInlayPropertyDeclarationTypeHints = true,
+                includeInlayVariableTypeHints = false,
+                includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+              },
+            },
+            completion = {
+              completeFunctionCalls = true,
+            },
+          },
+        },
         ['tailwindcss-language-server'] = {},
         html = {},
         cssls = {},
@@ -263,9 +296,9 @@ require('lazy').setup {
 
       -- Global mappings.
       -- See `:help vim.diagnostic.*` for documentation on any of the below functions
-      vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float)
-      vim.keymap.set('n', '[g', vim.diagnostic.goto_prev)
-      vim.keymap.set('n', ']g', vim.diagnostic.goto_next)
+      -- vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float)
+      -- vim.keymap.set('n', '[g', vim.diagnostic.goto_prev)
+      -- vim.keymap.set('n', ']g', vim.diagnostic.goto_next)
       vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
 
       -- Use LspAttach autocommand to only map the following keys
@@ -281,7 +314,7 @@ require('lazy').setup {
           local opts = { buffer = ev.buf }
           vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
           vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-          vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+          -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
           vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
           vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
           vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
@@ -293,6 +326,11 @@ require('lazy').setup {
           vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
           vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, opts)
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+
+          local client = vim.lsp.get_client_by_id(ev.data.client_id)
+          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+            vim.lsp.inlay_hint.enable()
+          end
         end,
       })
     end,
@@ -404,9 +442,9 @@ require('lazy').setup {
           { name = 'path' },
           { name = 'buffer', keyword_length = 4 },
         }),
-        experimental = {
-          ghost_text = true,
-        },
+        -- experimental = {
+        --   ghost_text = true,
+        -- },
       }
 
       -- Enable completing paths in :
@@ -474,9 +512,16 @@ require('lazy').setup {
       }
     end,
   },
+  -- {
+  --   'chakrit/vim-thai-keys',
+  --   lazy = false,
+  -- },
   {
-    'chakrit/vim-thai-keys',
-    lazy = false,
+    'ivanesmantovich/xkbswitch.nvim',
+    event = 'VeryLazy',
+    config = function(_, opts)
+      require('xkbswitch').setup()
+    end,
   },
 }
 
