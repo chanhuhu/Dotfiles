@@ -175,7 +175,7 @@ require('lazy').setup {
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
-      { 'folke/neodev.nvim', opts = {} },
+      { 'folke/lazydev.nvim', ft = 'lua', opts = {} },
     },
     config = function()
       -- Setup language servers.
@@ -333,6 +333,9 @@ require('lazy').setup {
           local client = vim.lsp.get_client_by_id(ev.data.client_id)
           if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
             vim.lsp.inlay_hint.enable()
+            vim.keymap.set('n', '<leader>ti', function()
+              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+            end, opts)
           end
         end,
       })
@@ -455,6 +458,13 @@ require('lazy').setup {
         sources = cmp.config.sources {
           { name = 'path' },
         },
+      })
+    end,
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      table.insert(opts.sources, {
+        name = 'lazydev',
+        group_index = 0, -- set group index to 0 to skip loading LuaLS completions
       })
     end,
   },
