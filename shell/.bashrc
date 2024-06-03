@@ -20,7 +20,4 @@ BASE16_SHELL="$HOME/.config/base16-shell/"
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-
-# Load Angular CLI autocompletion.
-source <(ng completion script)
-source /usr/share/nvm/init-nvm.sh
+eval "$(fnm env --use-on-cd)"

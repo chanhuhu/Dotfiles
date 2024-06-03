@@ -82,8 +82,8 @@ vim.keymap.set('n', '<leader>w', '<cmd>w<cr>')
 
 -- <leader>p will paste clipboard into buffer
 -- <leader>c will copy entire buffer into clipboard
-vim.keymap.set('n', '<leader>p', '<cmd>read !xsel --clipboard --output<cr>')
-vim.keymap.set('n', '<leader>c', '<cmd>w !xsel -ib<cr><cr>')
+vim.keymap.set('', '<leader>p', '<cmd>read !xsel --clipboard --output<cr>')
+vim.keymap.set('', '<leader>c', '<cmd>w !xsel -ib<cr><cr>')
 
 vim.keymap.set('', 'H', '^')
 vim.keymap.set('', 'L', '$')
@@ -91,8 +91,8 @@ vim.keymap.set('', 'L', '$')
 vim.keymap.set('n', '<C-q>', '<cmd>confirm qall<CR>')
 
 -- "very magic" (less escaping needed) regexes by default
-vim.keymap.set('n', '?', '?\\v')
-vim.keymap.set('n', '/', '/\\v')
+-- vim.keymap.set('n', '?', '?\\v')
+-- vim.keymap.set('n', '/', '/\\v')
 vim.keymap.set('c', '%s/', '%sm/')
 
 -- open new file adjacent to current file
@@ -129,14 +129,17 @@ require('lazy').setup {
   },
   -- quick navigation
   {
-    'ggandor/leap.nvim',
-    dependencies = {
-      'tpope/vim-repeat',
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    opts = {},
+    -- stylua: ignore
+    keys = {
+      { "s", mode = { "n", "x", "o" }, function() require("flash").jump()  end, desc = "Flash" },
+      { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter()  end, desc = "Flash Treesitter" },
+      { "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
+      { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+      { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
     },
-    config = function()
-      -- remove s hotkeys
-      require('leap').create_default_mappings()
-    end,
   },
   -- better %
   {

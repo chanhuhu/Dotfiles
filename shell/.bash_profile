@@ -57,7 +57,7 @@ export PATH=\
 $GOBIN:\
 $GEM_HOME/bin:\
 $HOME/.local/share/nvim/mason/bin:\
-$HOME/.yarn/bin:\
+$HOME/.bun/bin:\
 $HOME/.npm-global/bin:\
 $HOME/.cargo/bin:\
 $JAVA_HOME/bin:\

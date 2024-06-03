@@ -14,8 +14,7 @@
   algorithm = patience
   compactionHeuristic = true
 [merge]
-  tool = nvimdiff
-  conflictstyle = diff3
+  tool = nvim -d
 [alias]
   c = commit
   co = checkout
@@ -33,4 +32,3 @@
   helper = cache
 [pull]
   ff = only
-
