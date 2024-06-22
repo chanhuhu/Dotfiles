@@ -66,9 +66,6 @@ vim.opt.colorcolumn = '80'
 vim.textwidth = '79'
 
 -- hotkeys
-vim.keymap.set('i', '<C-c>', '<Esc>')
-vim.keymap.set('i', '<C-แ>', '<Esc>')
-vim.keymap.set('i', '<C-บ>', '<Esc>')
 vim.keymap.set('n', '<leader><leader>', '<C-^>')
 vim.keymap.set('n', '<leader>n', '<cmd>nohlsearch<CR>')
 -- quick-open
@@ -176,52 +173,86 @@ require('lazy').setup {
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/lazydev.nvim', ft = 'lua', opts = {} },
+      -- Schema information
+      'b0o/SchemaStore.nvim',
     },
     config = function()
       -- Setup language servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
+      -- Global mappings.
+      -- See `:help vim.diagnostic.*` for documentation on any of the below functions
+      -- vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float)
+      -- vim.keymap.set('n', '[g', vim.diagnostic.goto_prev)
+      -- vim.keymap.set('n', ']g', vim.diagnostic.goto_next)
+      vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
+      local on_attach = function(client, bufnr)
+        vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+        -- Buffer local mappings.
+        -- See `:help vim.lsp.*` for documentation on any of the below functions
+        local opts = { buffer = bufnr }
+        vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+        -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+        vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+        vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+        vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
+        vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
+        vim.keymap.set('n', '<leader>wl', function()
+          print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+        end, opts)
+        vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
+        vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
+        vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, opts)
+        vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+
+        if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+          vim.lsp.inlay_hint.enable()
+          vim.keymap.set('n', '<leader>ti', function()
+            vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = bufnr })
+            print('InlayHint: ' .. vim.inspect(vim.lsp.inlay_hint.is_enabled { bufnr = bufnr }))
+          end, opts)
+        end
+
+        if client.name == 'tsserver' then
+          client.server_capabilities.documentFormattingProvider = false
+        end
+      end
+
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {},
+        -- pyright = {},
         rust_analyzer = {
           settings = {
             ['rust-analyzer'] = {
-              assist = {
-                importGranularity = 'module',
-                importEnforceGranularity = true,
-              },
               cargo = {
-                loadOutDirsFromCheck = true,
                 allFeatures = true,
+                loadOutDirsFromCheck = true,
+                buildScripts = {
+                  enable = true,
+                },
+              },
+              checkOnSave = {
+                allFeatures = true,
+                command = 'clippy',
+                extraArgs = { '--no-deps' },
               },
               procMacro = {
                 enable = true,
-              },
-              checkOnSave = {
-                command = 'clippy',
-              },
-              experimental = {
-                procAttrMacros = true,
-              },
-              hoverActions = {
-                references = true,
-              },
-              lens = {
-                methodReferences = true,
-                references = true,
+                ignored = {
+                  ['async-trait'] = { 'async_trait' },
+                  ['napi-derive'] = { 'napi' },
+                  ['async-recursion'] = { 'async_recursion' },
+                },
               },
             },
           },
         },
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`tsserver`) will work just fine
+        taplo = {},
+
         tsserver = {
           settings = {
             typescript = {
@@ -253,11 +284,34 @@ require('lazy').setup {
             },
           },
         },
-        ['tailwindcss-language-server'] = {},
+        tailwindcss = {
+          root_dir = function(fname)
+            local root_pattern = require('lspconfig').util.root_pattern('tailwind.config.cjs', 'tailwind.config.js', 'postcss.config.js')
+            return root_pattern(fname)
+          end,
+        },
         html = {},
         cssls = {},
-        jsonls = {},
-        --
+        jsonls = {
+          settings = {
+            json = {
+              schemas = require('schemastore').json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
+
+        yamlls = {
+          settings = {
+            yaml = {
+              schemaStore = {
+                enable = false,
+                url = '',
+              },
+              schemas = require('schemastore').yaml.schemas(),
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = {...},
@@ -292,53 +346,11 @@ require('lazy').setup {
           function(server_name)
             local server = servers[server_name] or {}
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+            server.on_attach = on_attach
             require('lspconfig')[server_name].setup(server)
           end,
         },
       }
-
-      -- Global mappings.
-      -- See `:help vim.diagnostic.*` for documentation on any of the below functions
-      -- vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float)
-      -- vim.keymap.set('n', '[g', vim.diagnostic.goto_prev)
-      -- vim.keymap.set('n', ']g', vim.diagnostic.goto_next)
-      vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
-
-      -- Use LspAttach autocommand to only map the following keys
-      -- after the language server attaches to the current buffer
-      vim.api.nvim_create_autocmd('LspAttach', {
-        group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-        callback = function(ev)
-          -- Enable completion triggered by <c-x><c-o>
-          vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-
-          -- Buffer local mappings.
-          -- See `:help vim.lsp.*` for documentation on any of the below functions
-          local opts = { buffer = ev.buf }
-          vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-          vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-          -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-          vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-          vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-          vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
-          vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
-          vim.keymap.set('n', '<leader>wl', function()
-            print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-          end, opts)
-          vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
-          vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
-          vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, opts)
-          vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-
-          local client = vim.lsp.get_client_by_id(ev.data.client_id)
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
-            vim.lsp.inlay_hint.enable()
-            vim.keymap.set('n', '<leader>ti', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-            end, opts)
-          end
-        end,
-      })
     end,
   },
   -- Linter
@@ -381,7 +393,11 @@ require('lazy').setup {
       {
         '<leader>f',
         function()
-          require('conform').format { async = false, lsp_fallback = true, timeout_ms = 1000 }
+          require('conform').format {
+            async = false,
+            lsp_format = 'fallback',
+            timeout_ms = 1000,
+          }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -410,7 +426,6 @@ require('lazy').setup {
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
-      'hrsh7th/vim-vsnip',
     },
     config = function()
       local cmp = require 'cmp'
@@ -430,7 +445,7 @@ require('lazy').setup {
         },
         snippet = {
           expand = function(args)
-            vim.fn['vsnip#anonymous'](args.body)
+            vim.snippet.expand(args.body) -- For native neovim snippets (Neovim v0.10+)
           end,
         },
         mapping = cmp.mapping.preset.insert {
@@ -438,6 +453,13 @@ require('lazy').setup {
           ['<C-f>'] = cmp.mapping.scroll_docs(4),
           ['<C-Space>'] = cmp.mapping.complete(),
           ['<C-e>'] = cmp.mapping.abort(),
+          ['<C-y>'] = cmp.mapping(
+            cmp.mapping.confirm {
+              behavior = cmp.ConfirmBehavior.Insert,
+              select = true,
+            },
+            { 'i', 'c' }
+          ),
           -- Accept currently selected item.
           -- Set `select` to `false` to only confirm explicitly selected items.
           ['<CR>'] = cmp.mapping.confirm { select = true },
@@ -452,6 +474,13 @@ require('lazy').setup {
         --   ghost_text = true,
         -- },
       }
+      -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
+      cmp.setup.cmdline({ '/', '?' }, {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = {
+          { name = 'buffer' },
+        },
+      })
 
       -- Enable completing paths in :
       cmp.setup.cmdline(':', {
@@ -479,6 +508,7 @@ require('lazy').setup {
         'lua',
         'markdown',
         'python',
+        'ron',
         'rust',
         'tsx',
         'typescript',
@@ -511,20 +541,20 @@ require('lazy').setup {
     end,
   },
   -- inline function signatures
-  {
-    'ray-x/lsp_signature.nvim',
-    event = 'VeryLazy',
-    opts = {},
-    config = function(_, opts)
-      -- Get signatures (and _only_ signatures) when in argument lists.
-      require('lsp_signature').setup {
-        doc_lines = 0,
-        handler_opts = {
-          border = 'none',
-        },
-      }
-    end,
-  },
+  -- {
+  --   'ray-x/lsp_signature.nvim',
+  --   event = 'VeryLazy',
+  --   opts = {},
+  --   config = function(_, opts)
+  --     -- Get signatures (and _only_ signatures) when in argument lists.
+  --     require('lsp_signature').setup {
+  --       doc_lines = 0,
+  --       handler_opts = {
+  --         border = 'none',
+  --       },
+  --     }
+  --   end,
+  -- },
   -- {
   --   'chakrit/vim-thai-keys',
   --   lazy = false,
@@ -532,6 +562,13 @@ require('lazy').setup {
   {
     'ivanesmantovich/xkbswitch.nvim',
     event = 'VeryLazy',
+    keys = {
+      { '<Esc>', mode = 'i' },
+      { '<C-[>', mode = 'i' },
+      { '<C-บ>', mode = 'i', '<Esc>' },
+      { '<C-c>', mode = 'i', '<Esc>' },
+      { '<C-แ>', mode = 'i', '<Esc>' },
+    },
     config = function(_, opts)
       require('xkbswitch').setup()
     end,
