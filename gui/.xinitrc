@@ -9,7 +9,6 @@ usermodmap=$HOME/.Xmodmap
 sysresources=/etc/X11/xinit/.Xresources
 sysmodmap=/etc/X11/xinit/.Xmodmap
 
-
 # settings
 setxkbmap -model pc105 -layout us,th -option grp:alt_shift_toggle,caps:ctrl_modifier &
 

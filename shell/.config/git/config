@@ -8,7 +8,7 @@
 [color]
   ui = true
 [core]
-	autocrlf = input
+	autocrlf = false
   safecrlf = true
 [diff]
   algorithm = patience

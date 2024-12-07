@@ -22,6 +22,10 @@ vim.opt.shiftwidth = 2
 vim.opt.softtabstop = 2
 vim.opt.tabstop = 2
 
+-- Having longer updatetime (default is 4000 ms = 4s) leads to noticeable
+-- delays and poor user experience
+vim.opt.updatetime = 300
+vim.opt.timeoutlen = 300
 -- keep more context on screen while scrolling
 vim.opt.scrolloff = 2
 -- never show me line breaks if they're not there
@@ -29,6 +33,7 @@ vim.opt.wrap = false
 -- always draw sign column. prevents buffer moving when adding/deleting sign
 vim.opt.signcolumn = 'yes'
 
+vim.opt.swapfile = false
 -- Permanent undo
 vim.opt.undofile = true
 
@@ -97,16 +102,13 @@ vim.keymap.set('n', '<leader>e', ':e <C-R>=expand("%:p:h") . "/" <cr>')
 
 -- plugin manager
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
-  vim.fn.system {
-    'git',
-    'clone',
-    '--filter=blob:none',
-    'https://github.com/folke/lazy.nvim.git',
-    '--branch=stable', -- latest stable release
-    lazypath,
-  }
-end
+if not vim.uv.fs_stat(lazypath) then
+  local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
+  local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
+  if vim.v.shell_error ~= 0 then
+    error('Error cloning lazy.nvim:\n' .. out)
+  end
+end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
 require('lazy').setup {
@@ -216,7 +218,7 @@ require('lazy').setup {
           end, opts)
         end
 
-        if client.name == 'tsserver' then
+        if client.name == 'ts_ls' then
           client.server_capabilities.documentFormattingProvider = false
         end
       end
@@ -225,6 +227,15 @@ require('lazy').setup {
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
+        ruff = {
+          trace = 'messages',
+          init_options = {
+            settings = {
+              logLevel = 'debug',
+            },
+          },
+        },
+
         rust_analyzer = {
           settings = {
             ['rust-analyzer'] = {
@@ -253,7 +264,7 @@ require('lazy').setup {
         },
         taplo = {},
 
-        tsserver = {
+        ts_ls = {
           settings = {
             typescript = {
               inlayHints = {
@@ -284,6 +295,7 @@ require('lazy').setup {
             },
           },
         },
+        biome = {},
         tailwindcss = {
           root_dir = function(fname)
             local root_pattern = require('lspconfig').util.root_pattern('tailwind.config.cjs', 'tailwind.config.js', 'postcss.config.js')
@@ -364,6 +376,8 @@ require('lazy').setup {
       local lint = require 'lint'
 
       lint.linters_by_ft = {
+        python = { 'ruff' },
+        -- rust = { 'cargo' },
         javascript = { 'eslint_d' },
         typescript = { 'eslint_d' },
         javascriptreact = { 'eslint_d' },
@@ -405,12 +419,36 @@ require('lazy').setup {
     },
     opts = {
       notify_on_error = false,
+      -- format_on_save = function(bufnr)
+      --   -- Disable "format_on_save lsp_fallback" for languages that don't
+      --   -- have a well standardized coding style. You can add additional
+      --   -- languages here or re-enable it for the disabled ones.
+      --   local disable_filetypes = { c = true, cpp = true }
+      --   local lsp_format_opt
+      --   if disable_filetypes[vim.bo[bufnr].filetype] then
+      --     lsp_format_opt = 'never'
+      --   else
+      --     lsp_format_opt = 'fallback'
+      --   end
+      --   return {
+      --     timeout_ms = 500,
+      --     lsp_format = lsp_format_opt,
+      --   }
+      -- end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        javascript = { { 'prettierd', 'prettier' } },
-        typescript = { { 'prettierd', 'prettier' } },
-        javascriptreact = { { 'prettierd', 'prettier' } },
-        typescriptreact = { { 'prettierd', 'prettier' } },
+        rust = { 'rustfmt', lsp_format = 'fallback' },
+        python = function(bufnr)
+          if require('conform').get_formatter_info('ruff_format', bufnr).available then
+            return { 'ruff_format' }
+          else
+            return { 'isort', 'black' }
+          end
+        end,
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -426,6 +464,7 @@ require('lazy').setup {
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
+      'hrsh7th/cmp-cmdline',
     },
     config = function()
       local cmp = require 'cmp'
@@ -495,6 +534,26 @@ require('lazy').setup {
         name = 'lazydev',
         group_index = 0, -- set group index to 0 to skip loading LuaLS completions
       })
+    end,
+  },
+  {
+    'ray-x/lsp_signature.nvim',
+    event = 'VeryLazy',
+    opts = {
+      floating_window = false,
+      doc_lines = 0,
+      handler_opts = {
+        border = 'none',
+      },
+      hint_prefix = {
+        above = '↙ ', -- when the hint is on the line above the current line
+        current = '← ', -- when the hint is on the same line
+        below = '↖ ', -- when the hint is on the line below the current line
+      },
+    },
+    config = function(_, opts)
+      -- Get signatures (and _only_ signatures) when in argument lists.
+      require('lsp_signature').setup(opts)
     end,
   },
   -- Highlight, edit, and navigate code

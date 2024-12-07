@@ -4,12 +4,12 @@
 
 # terminal emulator
 super + a
-  alacritty
+  kitty
 
 # program launcher
-#super + @space
-# dmenu_run
-
+super + x
+  autorandr --change
+#
 # Print screen
 Print
   scrot '%Y-%m-%d-%H:%M:%S_$wx$h.png' -e 'mv $f ~/Pictures/screenshots'
