@@ -8,7 +8,7 @@
 [color]
   ui = true
 [core]
-	autocrlf = false
+	autocrlf = input
   safecrlf = true
 [diff]
   algorithm = patience
@@ -22,11 +22,14 @@
   last = log -1 HEAD
   s = status
   st = status
+  ss = "!f() { git stash show stash^{/$*} -p; }; f"
+	sa = "!f() { git stash apply stash^{/$*}; }; f"
+	sl = stash list
   l = log --color --graph --pretty=format:'%Cgreen%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C("#849598")<%an>%Creset' --abbrev-commit
 [push]
   default = simple
 [help]
-  autocorrect = 1
+  autocorrect = prompt
 [github]
   user = chanhuhu
 [credential]

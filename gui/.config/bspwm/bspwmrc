@@ -1,6 +1,7 @@
 #!/bin/sh
 
 sxhkd &
+blueman-applet &
 ulauncher --hide-window --no-window-shadow &
 nitrogen --restore &
 nmgui &

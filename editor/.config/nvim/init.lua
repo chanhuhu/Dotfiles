@@ -73,6 +73,10 @@ vim.textwidth = '79'
 -- hotkeys
 vim.keymap.set('n', '<leader><leader>', '<C-^>')
 vim.keymap.set('n', '<leader>n', '<cmd>nohlsearch<CR>')
+
+-- Diagnostic keymaps
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+
 -- quick-open
 vim.keymap.set('n', '<C-p>', "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
 -- search buffers
@@ -85,7 +89,8 @@ vim.keymap.set('n', '<leader>w', '<cmd>w<cr>')
 -- <leader>p will paste clipboard into buffer
 -- <leader>c will copy entire buffer into clipboard
 vim.keymap.set('', '<leader>p', '<cmd>read !xsel --clipboard --output<cr>')
-vim.keymap.set('', '<leader>c', '<cmd>w !xsel -ib<cr><cr>')
+vim.keymap.set('n', '<leader>c', '<cmd>w !xsel -ib<cr><cr>')
+vim.keymap.set('v', '<leader>c', '"+y')
 
 vim.keymap.set('', 'H', '^')
 vim.keymap.set('', 'L', '$')
@@ -99,6 +104,29 @@ vim.keymap.set('c', '%s/', '%sm/')
 
 -- open new file adjacent to current file
 vim.keymap.set('n', '<leader>e', ':e <C-R>=expand("%:p:h") . "/" <cr>')
+-- make j and k move by visual line, not actual line, when text is soft-wrapped
+vim.keymap.set('n', 'j', 'gj')
+vim.keymap.set('n', 'k', 'gk')
+
+-- qflist
+vim.keymap.set('n', '<M-q>', function()
+  local qf_open = false
+  for _, win in ipairs(vim.fn.getwininfo()) do
+    if win.quickfix == 1 then
+      qf_open = true
+      break
+    end
+  end
+  if qf_open then
+    vim.cmd 'cclose'
+  else
+    vim.cmd 'copen'
+  end
+end, { silent = true })
+vim.keymap.set('n', '<M-n>', '<cmd>cnext<CR>')
+
+-- Navigate to Previous Entry
+vim.keymap.set('n', '<M-p>', '<cmd>cprev<CR>')
 
 -- plugin manager
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -111,6 +139,44 @@ if not vim.uv.fs_stat(lazypath) then
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
+local on_attach = function(client, bufnr)
+  vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+  -- Buffer local mappings.
+  -- See `:help vim.lsp.*` for documentation on any of the below functions
+  local opts = { buffer = bufnr }
+  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+  -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+  -- vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+  -- vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+  -- vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
+  vim.keymap.set('n', 'gi', require('fzf-lua').lsp_implementations, opts)
+  vim.keymap.set('n', 'gr', require('fzf-lua').lsp_references, opts)
+  vim.keymap.set('n', 'gy', require('fzf-lua').lsp_typedefs, opts)
+  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+  vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
+  vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
+  vim.keymap.set('n', '<leader>wl', function()
+    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+  end, opts)
+  vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
+  vim.keymap.set({ 'n', 'x' }, '<leader>a', vim.lsp.buf.code_action, opts)
+  -- vim.keymap.set({ 'n', 'x' }, '<leader>a', require('fzf-lua').lsp_code_actions, opts)
+
+  if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+    vim.lsp.inlay_hint.enable()
+    vim.keymap.set('n', '<leader>ti', function()
+      vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = bufnr })
+      print('InlayHint: ' .. vim.inspect(vim.lsp.inlay_hint.is_enabled { bufnr = bufnr }))
+    end, opts)
+  end
+
+  if client.name == 'typescript-tools' then
+    client.server_capabilities.documentFormattingProvider = false
+  end
+end
+
 require('lazy').setup {
   -- main color scheme
   {
@@ -121,7 +187,8 @@ require('lazy').setup {
       if vim.env.BASE16_THEME then
         if not vim.g.colors_name or vim.g.colors_name ~= 'base16-' .. vim.env.BASE16_THEME then
           vim.g.base16colorspace = 256
-          vim.cmd('colorscheme base16-' .. vim.env.BASE16_THEME)
+          -- vim.cmd('colorscheme base16-' .. vim.env.BASE16_THEME)
+          vim.cmd('colorscheme ' .. vim.env.BASE16_THEME) -- strip prefix https://github.com/wincent/base16-nvim/commit/178bebdd6342c59151f6cfa2553d8e0f3f8b6a69
         end
       end
     end,
@@ -161,7 +228,33 @@ require('lazy').setup {
       { 'junegunn/fzf', dir = '~/.fzf', build = './install --all' },
     },
     config = function()
-      require('fzf-lua').setup { 'fzf-native' }
+      require('fzf-lua').setup {
+        'fzf-native',
+        keymap = {
+          builtin = {
+            ['<c-f>'] = 'preview-page-down',
+            ['<c-b>'] = 'preview-page-up',
+          },
+          fzf = {
+            ['ctrl-q'] = 'select-all+accept',
+            ['ctrl-u'] = 'half-page-up',
+            ['ctrl-d'] = 'half-page-down',
+            ['ctrl-x'] = 'jump',
+            ['ctrl-f'] = 'preview-page-down',
+            ['ctrl-b'] = 'preview-page-up',
+          },
+        },
+        winopts = {
+          width = 0.8,
+          height = 0.8,
+          row = 0.5,
+          col = 0.5,
+          preview = {
+            default = 'bat',
+          },
+        },
+      }
+      vim.keymap.set('n', '<leader>d', require('fzf-lua').diagnostics_workspace)
     end,
   },
   -- LSP
@@ -174,7 +267,13 @@ require('lazy').setup {
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
-      { 'folke/lazydev.nvim', ft = 'lua', opts = {} },
+      {
+        'folke/lazydev.nvim',
+        ft = 'lua',
+        opts = {
+          library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+        },
+      },
       -- Schema information
       'b0o/SchemaStore.nvim',
     },
@@ -182,46 +281,6 @@ require('lazy').setup {
       -- Setup language servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
-
-      -- Global mappings.
-      -- See `:help vim.diagnostic.*` for documentation on any of the below functions
-      -- vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float)
-      -- vim.keymap.set('n', '[g', vim.diagnostic.goto_prev)
-      -- vim.keymap.set('n', ']g', vim.diagnostic.goto_next)
-      vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
-      local on_attach = function(client, bufnr)
-        vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-
-        -- Buffer local mappings.
-        -- See `:help vim.lsp.*` for documentation on any of the below functions
-        local opts = { buffer = bufnr }
-        vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-        -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-        vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-        vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-        vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
-        vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
-        vim.keymap.set('n', '<leader>wl', function()
-          print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-        end, opts)
-        vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
-        vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
-        vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, opts)
-        vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-
-        if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
-          vim.lsp.inlay_hint.enable()
-          vim.keymap.set('n', '<leader>ti', function()
-            vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = bufnr })
-            print('InlayHint: ' .. vim.inspect(vim.lsp.inlay_hint.is_enabled { bufnr = bufnr }))
-          end, opts)
-        end
-
-        if client.name == 'ts_ls' then
-          client.server_capabilities.documentFormattingProvider = false
-        end
-      end
 
       local servers = {
         -- clangd = {},
@@ -264,43 +323,43 @@ require('lazy').setup {
         },
         taplo = {},
 
-        ts_ls = {
-          settings = {
-            typescript = {
-              inlayHints = {
-                includeInlayEnumMemberValueHints = true,
-                includeInlayFunctionLikeReturnTypeHints = true,
-                includeInlayFunctionParameterTypeHints = true,
-                includeInlayParameterNameHints = 'literal',
-                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-                includeInlayPropertyDeclarationTypeHints = true,
-                includeInlayVariableTypeHints = false,
-                includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              },
-            },
-            javascript = {
-              inlayHints = {
-                includeInlayEnumMemberValueHints = true,
-                includeInlayFunctionLikeReturnTypeHints = true,
-                includeInlayFunctionParameterTypeHints = true,
-                includeInlayParameterNameHints = 'literal',
-                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-                includeInlayPropertyDeclarationTypeHints = true,
-                includeInlayVariableTypeHints = false,
-                includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              },
-            },
-            completion = {
-              completeFunctionCalls = true,
-            },
-          },
-        },
+        -- ts_ls = {
+        --   settings = {
+        --     typescript = {
+        --       inlayHints = {
+        --         includeInlayEnumMemberValueHints = true,
+        --         includeInlayFunctionLikeReturnTypeHints = true,
+        --         includeInlayFunctionParameterTypeHints = true,
+        --         includeInlayParameterNameHints = 'literal',
+        --         includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        --         includeInlayPropertyDeclarationTypeHints = true,
+        --         includeInlayVariableTypeHints = false,
+        --         includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+        --       },
+        --     },
+        --     javascript = {
+        --       inlayHints = {
+        --         includeInlayEnumMemberValueHints = true,
+        --         includeInlayFunctionLikeReturnTypeHints = true,
+        --         includeInlayFunctionParameterTypeHints = true,
+        --         includeInlayParameterNameHints = 'literal',
+        --         includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        --         includeInlayPropertyDeclarationTypeHints = true,
+        --         includeInlayVariableTypeHints = false,
+        --         includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+        --       },
+        --     },
+        --     completion = {
+        --       completeFunctionCalls = true,
+        --     },
+        --   },
+        -- },
         biome = {},
         tailwindcss = {
-          root_dir = function(fname)
-            local root_pattern = require('lspconfig').util.root_pattern('tailwind.config.cjs', 'tailwind.config.js', 'postcss.config.js')
-            return root_pattern(fname)
-          end,
+          -- root_dir = function(fname)
+          --   local root_pattern = require('lspconfig').util.root_pattern('tailwind.config.cjs', 'tailwind.config.js', 'postcss.config.js')
+          --   return root_pattern(fname)
+          -- end,
         },
         html = {},
         cssls = {},
@@ -339,6 +398,8 @@ require('lazy').setup {
             },
           },
         },
+        bashls = {},
+        intelephense = {},
       }
 
       require('mason').setup()
@@ -349,10 +410,15 @@ require('lazy').setup {
         'stylua',
         'prettierd',
         'eslint_d',
+        'shellcheck',
+        'shfmt',
+        'phpcs',
+        'php-cs-fixer',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      ---@diagnostic disable-next-line: missing-fields
       require('mason-lspconfig').setup {
         handlers = {
           function(server_name)
@@ -361,6 +427,26 @@ require('lazy').setup {
             server.on_attach = on_attach
             require('lspconfig')[server_name].setup(server)
           end,
+        },
+      }
+    end,
+  },
+  {
+    'pmizio/typescript-tools.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    config = function()
+      require('typescript-tools').setup {
+        on_attach = on_attach,
+        settings = {
+          tsserver_file_preferences = {
+            includeInlayParameterNameHints = 'all',
+            includeCompletionsForModuleExports = true,
+            quotePreference = 'auto',
+          },
+          tsserver_format_options = {
+            allowIncompleteCompletions = false,
+            allowRenameOfImportPath = false,
+          },
         },
       }
     end,
@@ -377,11 +463,13 @@ require('lazy').setup {
 
       lint.linters_by_ft = {
         python = { 'ruff' },
-        -- rust = { 'cargo' },
         javascript = { 'eslint_d' },
         typescript = { 'eslint_d' },
         javascriptreact = { 'eslint_d' },
         typescriptreact = { 'eslint_d' },
+        sh = { 'shellcheck' },
+        rust = { 'clippy' },
+        php = { 'phpcs' },
       }
 
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
@@ -389,7 +477,7 @@ require('lazy').setup {
       vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
         group = lint_augroup,
         callback = function()
-          lint.try_lint()
+          pcall(require, 'lint.try_lint')
         end,
       })
 
@@ -449,6 +537,8 @@ require('lazy').setup {
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
         javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        sh = { 'shfmt' },
+        php = {'php_cs_fixer'}
       },
     },
   },
@@ -521,11 +611,16 @@ require('lazy').setup {
         },
       })
 
-      -- Enable completing paths in :
+      -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
       cmp.setup.cmdline(':', {
-        sources = cmp.config.sources {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({
           { name = 'path' },
-        },
+        }, {
+          { name = 'cmdline' },
+        }),
+        ---@diagnostic disable-next-line: missing-fields
+        matching = { disallow_symbol_nonprefix_matching = false },
       })
     end,
     opts = function(_, opts)
@@ -538,8 +633,9 @@ require('lazy').setup {
   },
   {
     'ray-x/lsp_signature.nvim',
-    event = 'VeryLazy',
+    event = 'InsertEnter',
     opts = {
+      bind = true,
       floating_window = false,
       doc_lines = 0,
       handler_opts = {
@@ -571,6 +667,7 @@ require('lazy').setup {
         'rust',
         'tsx',
         'typescript',
+        'php',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
@@ -630,6 +727,20 @@ require('lazy').setup {
     },
     config = function(_, opts)
       require('xkbswitch').setup()
+    end,
+  },
+  -- Comment
+  {
+    'JoosepAlviste/nvim-ts-context-commentstring',
+    config = function(_, opts)
+      require('ts_context_commentstring').setup {
+        enable_autocmd = false,
+      }
+      local get_option = vim.filetype.get_option
+      ---@diagnostic disable-next-line: duplicate-set-field
+      vim.filetype.get_option = function(filetype, option)
+        return option == 'commentstring' and require('ts_context_commentstring.internal').calculate_commentstring() or get_option(filetype, option)
+      end
     end,
   },
 }
