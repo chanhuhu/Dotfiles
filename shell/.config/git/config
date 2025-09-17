@@ -3,6 +3,7 @@
 [user]
   name = Aphimuk Yimsukpaitoon
   email = luroman6@gmail.com
+	signingkey = ED0F10211A09DC94
 [ui "color"]
   ui = always
 [color]
@@ -38,3 +39,5 @@
   ff = only
 [mergetool "nvimdiff"]
 	cmd = nvim -d \"$LOCAL\" \"$MERGED\" \"$BASE\" \"$REMOTE\" -c \"wincmd w\" -c \"wincmd J\"
+[commit]
+	gpgsign = true

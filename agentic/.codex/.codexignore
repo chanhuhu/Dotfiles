@@ -1,0 +1,4 @@
+.env
+secrets/*.json
+private_key.pem
+node_modules/ 

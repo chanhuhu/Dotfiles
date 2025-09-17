@@ -164,7 +164,7 @@ local on_attach = function(client, bufnr)
   vim.keymap.set({ 'n', 'x' }, '<leader>a', vim.lsp.buf.code_action, opts)
   -- vim.keymap.set({ 'n', 'x' }, '<leader>a', require('fzf-lua').lsp_code_actions, opts)
 
-  if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+  if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, bufnr) then
     vim.lsp.inlay_hint.enable()
     vim.keymap.set('n', '<leader>ti', function()
       vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = bufnr })
@@ -200,18 +200,28 @@ require('lazy').setup {
     opts = {},
     -- stylua: ignore
     keys = {
-      { "s", mode = { "n", "x", "o" }, function() require("flash").jump()  end, desc = "Flash" },
-      { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter()  end, desc = "Flash Treesitter" },
-      { "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
-      { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
-      { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
+      { "s",     mode = { "n", "x", "o" }, function() require("flash").jump() end,              desc = "Flash" },
+      { "S",     mode = { "n", "x", "o" }, function() require("flash").treesitter() end,        desc = "Flash Treesitter" },
+      { "r",     mode = "o",               function() require("flash").remote() end,            desc = "Remote Flash" },
+      { "R",     mode = { "o", "x" },      function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+      { "<c-s>", mode = { "c" },           function() require("flash").toggle() end,            desc = "Toggle Flash Search" },
     },
   },
   -- better %
   {
     'andymass/vim-matchup',
-    config = function()
+    init = function()
+      -- modify your configuration vars here
+      vim.g.matchup_treesitter_stopline = 500
       vim.g.matchup_matchparen_offscreen = { method = 'popup' }
+
+      -- or call the setup function provided as a helper. It defines the
+      -- configuration vars for you
+      require('match-up').setup {
+        treesitter = {
+          stopline = 500,
+        },
+      }
     end,
   },
   -- auto-cd to root of git project
@@ -253,6 +263,9 @@ require('lazy').setup {
             default = 'bat',
           },
         },
+        fzf_opts = {
+          ['--layout'] = 'default',
+        },
       }
       vim.keymap.set('n', '<leader>d', require('fzf-lua').diagnostics_workspace)
     end,
@@ -262,8 +275,8 @@ require('lazy').setup {
     'neovim/nvim-lspconfig',
     dependencies = {
       -- Automatically install LSPs and related tools to stdpath for Neovim
-      { 'williamboman/mason.nvim', config = true }, -- NOTE: Must be loaded before dependants
-      'williamboman/mason-lspconfig.nvim',
+      { 'mason-org/mason.nvim', opts = {} },
+      'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
@@ -282,6 +295,26 @@ require('lazy').setup {
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
+      vim.diagnostic.config {
+        severity_sort = true,
+        float = { border = 'none', source = 'if_many' },
+        underline = { severity = vim.diagnostic.severity.ERROR },
+        signs = {},
+        virtual_text = {
+          source = 'if_many',
+          spacing = 2,
+          format = function(diagnostic)
+            local diagnostic_message = {
+              [vim.diagnostic.severity.ERROR] = diagnostic.message,
+              [vim.diagnostic.severity.WARN] = diagnostic.message,
+              [vim.diagnostic.severity.INFO] = diagnostic.message,
+              [vim.diagnostic.severity.HINT] = diagnostic.message,
+            }
+            return diagnostic_message[diagnostic.severity]
+          end,
+        },
+      }
+
       local servers = {
         -- clangd = {},
         -- gopls = {},
@@ -299,23 +332,22 @@ require('lazy').setup {
           settings = {
             ['rust-analyzer'] = {
               cargo = {
-                allFeatures = true,
-                loadOutDirsFromCheck = true,
-                buildScripts = {
-                  enable = true,
-                },
+                features = 'all',
               },
               checkOnSave = {
-                allFeatures = true,
-                command = 'clippy',
-                extraArgs = { '--no-deps' },
-              },
-              procMacro = {
                 enable = true,
-                ignored = {
-                  ['async-trait'] = { 'async_trait' },
-                  ['napi-derive'] = { 'napi' },
-                  ['async-recursion'] = { 'async_recursion' },
+              },
+              check = {
+                command = 'clippy',
+              },
+              imports = {
+                group = {
+                  enable = false,
+                },
+              },
+              completion = {
+                postfix = {
+                  enable = false,
                 },
               },
             },
@@ -420,6 +452,8 @@ require('lazy').setup {
 
       ---@diagnostic disable-next-line: missing-fields
       require('mason-lspconfig').setup {
+        ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+        automatic_installation = false,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -538,7 +572,7 @@ require('lazy').setup {
         javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         sh = { 'shfmt' },
-        php = {'php_cs_fixer'}
+        php = { 'php_cs_fixer' },
       },
     },
   },
@@ -591,7 +625,7 @@ require('lazy').setup {
           ),
           -- Accept currently selected item.
           -- Set `select` to `false` to only confirm explicitly selected items.
-          ['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<CR>'] = cmp.mapping.confirm { select = true, behavior = cmp.ConfirmBehavior.Insert },
         },
         sources = cmp.config.sources({
           { name = 'nvim_lsp' },
@@ -678,7 +712,11 @@ require('lazy').setup {
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      -- indent = { enable = false, disable = { 'ruby' } },
+      indent = { enable = false, disable = { 'ruby' } },
+      -- matchup = {
+      --   enable = true, -- mandatory, false will disable the whole extension
+      --   disable = { 'c', 'ruby' }, -- optional, list of language that will be disabled
+      -- },
     },
     config = function(_, opts)
       -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
@@ -696,21 +734,6 @@ require('lazy').setup {
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
-  -- inline function signatures
-  -- {
-  --   'ray-x/lsp_signature.nvim',
-  --   event = 'VeryLazy',
-  --   opts = {},
-  --   config = function(_, opts)
-  --     -- Get signatures (and _only_ signatures) when in argument lists.
-  --     require('lsp_signature').setup {
-  --       doc_lines = 0,
-  --       handler_opts = {
-  --         border = 'none',
-  --       },
-  --     }
-  --   end,
-  -- },
   -- {
   --   'chakrit/vim-thai-keys',
   --   lazy = false,
@@ -748,8 +771,9 @@ require('lazy').setup {
 -- highlight yanked text
 vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
-  command = 'silent! lua vim.highlight.on_yank({ timeout = 500 })',
+  command = 'silent! lua vim.hl.on_yank({ timeout = 500 })',
 })
+
 -- jump to last edit position on opening file
 vim.api.nvim_create_autocmd('BufReadPost', {
   pattern = '*',
