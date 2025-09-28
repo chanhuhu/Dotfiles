@@ -289,11 +289,12 @@ require('lazy').setup {
       },
       -- Schema information
       'b0o/SchemaStore.nvim',
+      -- Allows extra capabilities provided by blink.cmp
+      'saghen/blink.cmp',
     },
     config = function()
       -- Setup language servers.
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-      capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+      local capabilities = require('blink.cmp').get_lsp_capabilities()
 
       vim.diagnostic.config {
         severity_sort = true,
@@ -577,114 +578,90 @@ require('lazy').setup {
     },
   },
   -- LSP-based code-completion
-  {
-    'hrsh7th/nvim-cmp',
-    -- load cmp on InsertEnter
-    event = 'InsertEnter',
-    -- these dependencies will only be loaded when cmp loads
-    -- dependencies are always lazy-loaded unless specified otherwise
+  { -- Autocompletion
+    'saghen/blink.cmp',
+    event = 'VimEnter',
+    version = '1.*',
     dependencies = {
-      'neovim/nvim-lspconfig',
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-buffer',
-      'hrsh7th/cmp-path',
-      'hrsh7th/cmp-cmdline',
+      'folke/lazydev.nvim',
     },
-    config = function()
-      local cmp = require 'cmp'
-      cmp.setup {
-        preselect = cmp.PreselectMode.None,
-        ---@diagnostic disable-next-line: missing-fields
-        formatting = {
-          format = function(entry, vim_item)
-            -- set a name for each source
-            vim_item.menu = ({
-              buffer = '[Buffer]',
-              nvim_lsp = '[LSP]',
-              path = '[Path]',
-            })[entry.source.name]
-            return vim_item
-          end,
-        },
-        snippet = {
-          expand = function(args)
-            vim.snippet.expand(args.body) -- For native neovim snippets (Neovim v0.10+)
-          end,
-        },
-        mapping = cmp.mapping.preset.insert {
-          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-f>'] = cmp.mapping.scroll_docs(4),
-          ['<C-Space>'] = cmp.mapping.complete(),
-          ['<C-e>'] = cmp.mapping.abort(),
-          ['<C-y>'] = cmp.mapping(
-            cmp.mapping.confirm {
-              behavior = cmp.ConfirmBehavior.Insert,
-              select = true,
-            },
-            { 'i', 'c' }
-          ),
-          -- Accept currently selected item.
-          -- Set `select` to `false` to only confirm explicitly selected items.
-          ['<CR>'] = cmp.mapping.confirm { select = true, behavior = cmp.ConfirmBehavior.Insert },
-        },
-        sources = cmp.config.sources({
-          { name = 'nvim_lsp' },
-        }, {
-          { name = 'path' },
-          { name = 'buffer', keyword_length = 4 },
-        }),
-        -- experimental = {
-        --   ghost_text = true,
-        -- },
-      }
-      -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-      cmp.setup.cmdline({ '/', '?' }, {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = {
-          { name = 'buffer' },
-        },
-      })
-
-      -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
-      cmp.setup.cmdline(':', {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = cmp.config.sources({
-          { name = 'path' },
-        }, {
-          { name = 'cmdline' },
-        }),
-        ---@diagnostic disable-next-line: missing-fields
-        matching = { disallow_symbol_nonprefix_matching = false },
-      })
-    end,
-    opts = function(_, opts)
-      opts.sources = opts.sources or {}
-      table.insert(opts.sources, {
-        name = 'lazydev',
-        group_index = 0, -- set group index to 0 to skip loading LuaLS completions
-      })
-    end,
-  },
-  {
-    'ray-x/lsp_signature.nvim',
-    event = 'InsertEnter',
+    --- @module 'blink.cmp'
+    --- @type blink.cmp.Config
     opts = {
-      bind = true,
-      floating_window = false,
-      doc_lines = 0,
-      handler_opts = {
-        border = 'none',
+      keymap = {
+        -- 'default' (recommended) for mappings similar to built-in completions
+        --   <c-y> to accept ([y]es) the completion.
+        --    This will auto-import if your LSP supports it.
+        --    This will expand snippets if the LSP sent a snippet.
+        -- 'super-tab' for tab to accept
+        -- 'enter' for enter to accept
+        -- 'none' for no mappings
+        --
+        -- For an understanding of why the 'default' preset is recommended,
+        -- you will need to read `:help ins-completion`
+        --
+        -- No, but seriously. Please read `:help ins-completion`, it is really good!
+        --
+        -- All presets have the following mappings:
+        -- <tab>/<s-tab>: move to right/left of your snippet expansion
+        -- <c-space>: Open menu or open docs if already open
+        -- <c-n>/<c-p> or <up>/<down>: Select next/previous item
+        -- <c-e>: Hide menu
+        -- <c-k>: Toggle signature help
+        --
+        -- See :h blink-cmp-config-keymap for defining your own keymap
+        preset = 'none',
+
+        ['<Tab>'] = { 'show_and_insert_or_accept_single', 'select_next' },
+        ['<S-Tab>'] = { 'show_and_insert_or_accept_single', 'select_prev' },
+
+        ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
+        ['<C-y>'] = { 'select_and_accept', 'fallback' },
+        ['<C-e>'] = { 'cancel', 'fallback' },
+        ['<CR>'] = { 'accept', 'fallback' },
+
+        ['<Up>'] = { 'select_prev', 'fallback' },
+        ['<Down>'] = { 'select_next', 'fallback' },
+        ['<C-p>'] = { 'select_prev', 'fallback_to_mappings' },
+        ['<C-n>'] = { 'select_next', 'fallback_to_mappings' },
+
+        ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
+        ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
       },
-      hint_prefix = {
-        above = '↙ ', -- when the hint is on the line above the current line
-        current = '← ', -- when the hint is on the same line
-        below = '↖ ', -- when the hint is on the line below the current line
+
+      appearance = {
+        -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+        -- Adjusts spacing to ensure icons are aligned
+        nerd_font_variant = 'mono',
       },
+
+      completion = {
+        -- By default, you may press `<c-space>` to show the documentation.
+        -- Optionally, set `auto_show = true` to show the documentation after a delay.
+        documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      },
+      sources = {
+        default = { 'lsp', 'path', 'snippets', 'lazydev', 'buffer' },
+        providers = {
+          lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          buffer = { min_keyword_length = 4 },
+        },
+      },
+
+      snippets = { preset = 'default' },
+
+      -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
+      -- which automatically downloads a prebuilt binary when enabled.
+      --
+      -- By default, we use the Lua implementation instead, but you may enable
+      -- the rust implementation via `'prefer_rust_with_warning'`
+      --
+      -- See :h blink-cmp-config-fuzzy for more information
+      fuzzy = { implementation = 'prefer_rust_with_warning' },
+
+      -- Shows a signature help window while you type arguments for a function
+      signature = { enabled = true, window = { show_documentation = false } },
     },
-    config = function(_, opts)
-      -- Get signatures (and _only_ signatures) when in argument lists.
-      require('lsp_signature').setup(opts)
-    end,
   },
   -- Highlight, edit, and navigate code
   {
