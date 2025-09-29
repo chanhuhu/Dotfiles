@@ -175,6 +175,20 @@ local on_attach = function(client, bufnr)
   if client.name == 'typescript-tools' then
     client.server_capabilities.documentFormattingProvider = false
   end
+
+  -- workaround for gopls not supporting semanticTokensProvider
+  -- https://github.com/golang/go/issues/54531#issuecomment-1464982242
+  if not client.server_capabilities.semanticTokensProvider then
+    local semantic = client.config.capabilities.textDocument.semanticTokens
+    client.server_capabilities.semanticTokensProvider = {
+      full = true,
+      legend = {
+        tokenTypes = semantic.tokenTypes,
+        tokenModifiers = semantic.tokenModifiers,
+      },
+      range = true,
+    }
+  end
 end
 
 require('lazy').setup {
@@ -210,19 +224,13 @@ require('lazy').setup {
   -- better %
   {
     'andymass/vim-matchup',
-    init = function()
-      -- modify your configuration vars here
-      vim.g.matchup_treesitter_stopline = 500
-      vim.g.matchup_matchparen_offscreen = { method = 'popup' }
-
-      -- or call the setup function provided as a helper. It defines the
-      -- configuration vars for you
-      require('match-up').setup {
-        treesitter = {
-          stopline = 500,
-        },
-      }
-    end,
+    ---@type matchup.Config
+    opts = {
+      treesitter = {
+        stopline = 500,
+      },
+      matchparen = { offscreen = { method = 'popup' } },
+    },
   },
   -- auto-cd to root of git project
   {
@@ -318,7 +326,43 @@ require('lazy').setup {
 
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {
+          settings = {
+            gopls = {
+              gofumpt = true,
+              codelenses = {
+                gc_details = false,
+                generate = true,
+                regenerate_cgo = true,
+                run_govulncheck = true,
+                test = true,
+                tidy = true,
+                upgrade_dependency = true,
+                vendor = true,
+              },
+              hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                compositeLiteralTypes = true,
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+              },
+              analyses = {
+                nilness = true,
+                unusedparams = true,
+                unusedwrite = true,
+                useany = true,
+              },
+              usePlaceholders = true,
+              completeUnimported = true,
+              staticcheck = true,
+              directoryFilters = { '-.git', '-.vscode', '-.idea', '-.vscode-test', '-node_modules' },
+              semanticTokens = true,
+            },
+          },
+        },
         -- pyright = {},
         ruff = {
           trace = 'messages',
@@ -389,13 +433,31 @@ require('lazy').setup {
         -- },
         biome = {},
         tailwindcss = {
-          -- root_dir = function(fname)
-          --   local root_pattern = require('lspconfig').util.root_pattern('tailwind.config.cjs', 'tailwind.config.js', 'postcss.config.js')
-          --   return root_pattern(fname)
-          -- end,
+          settings = {
+            tailwindCSS = {
+              lint = {
+                invalidApply = false,
+              },
+            },
+          },
         },
         html = {},
-        cssls = {},
+        cssls = {
+          settings = {
+            css = {
+              validate = true,
+              lint = {
+                unknownAtRules = 'ignore',
+              },
+            },
+            scss = {
+              validate = true,
+              lint = {
+                unknownAtRules = 'ignore',
+              },
+            },
+          },
+        },
         jsonls = {
           settings = {
             json = {
@@ -447,6 +509,8 @@ require('lazy').setup {
         'shfmt',
         'phpcs',
         'php-cs-fixer',
+        'goimports',
+        'gofumpt',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -560,7 +624,7 @@ require('lazy').setup {
       -- end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        rust = { 'rustfmt', lsp_format = 'fallback' },
+        rust = { 'rustfmt' },
         python = function(bufnr)
           if require('conform').get_formatter_info('ruff_format', bufnr).available then
             return { 'ruff_format' }
@@ -574,13 +638,17 @@ require('lazy').setup {
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         sh = { 'shfmt' },
         php = { 'php_cs_fixer' },
+        go = { 'goimports', 'gofumpt' },
+      },
+      default_format_opts = {
+        lsp_format = 'fallback',
       },
     },
   },
   -- LSP-based code-completion
   { -- Autocompletion
     'saghen/blink.cmp',
-    event = 'VimEnter',
+    event = { 'InsertEnter', 'CmdlineEnter' },
     version = '1.*',
     dependencies = {
       'folke/lazydev.nvim',
@@ -616,9 +684,9 @@ require('lazy').setup {
         ['<S-Tab>'] = { 'show_and_insert_or_accept_single', 'select_prev' },
 
         ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
-        ['<C-y>'] = { 'select_and_accept', 'fallback' },
+        ['<C-y>'] = { 'select_and_accept' },
         ['<C-e>'] = { 'cancel', 'fallback' },
-        ['<CR>'] = { 'accept', 'fallback' },
+        ['<CR>'] = { 'select_and_accept', 'fallback' },
 
         ['<Up>'] = { 'select_prev', 'fallback' },
         ['<Down>'] = { 'select_next', 'fallback' },
@@ -630,6 +698,7 @@ require('lazy').setup {
       },
 
       appearance = {
+        use_nvim_cmp_as_default = false,
         -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
         -- Adjusts spacing to ensure icons are aligned
         nerd_font_variant = 'mono',
@@ -638,7 +707,9 @@ require('lazy').setup {
       completion = {
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
+        accept = { auto_brackets = { enabled = true } },
         documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        list = { selection = { preselect = false, auto_insert = true } },
       },
       sources = {
         default = { 'lsp', 'path', 'snippets', 'lazydev', 'buffer' },
@@ -661,6 +732,24 @@ require('lazy').setup {
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true, window = { show_documentation = false } },
+
+      cmdline = {
+        enabled = true,
+        keymap = {
+          preset = 'cmdline',
+          ['<Up>'] = { 'select_prev', 'fallback' },
+          ['<Down>'] = { 'select_next', 'fallback' },
+        },
+        completion = {
+          list = { selection = { preselect = false } },
+          menu = {
+            auto_show = function(ctx)
+              return vim.fn.getcmdtype() == ':'
+            end,
+          },
+          ghost_text = { enabled = true },
+        },
+      },
     },
   },
   -- Highlight, edit, and navigate code
@@ -679,6 +768,7 @@ require('lazy').setup {
         'tsx',
         'typescript',
         'php',
+        'go',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
