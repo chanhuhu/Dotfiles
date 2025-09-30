@@ -172,10 +172,6 @@ local on_attach = function(client, bufnr)
     end, opts)
   end
 
-  if client.name == 'typescript-tools' then
-    client.server_capabilities.documentFormattingProvider = false
-  end
-
   -- workaround for gopls not supporting semanticTokensProvider
   -- https://github.com/golang/go/issues/54531#issuecomment-1464982242
   if not client.server_capabilities.semanticTokensProvider then
@@ -511,6 +507,7 @@ require('lazy').setup {
         'php-cs-fixer',
         'goimports',
         'gofumpt',
+        'golangci-lint',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -535,7 +532,11 @@ require('lazy').setup {
     dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
     config = function()
       require('typescript-tools').setup {
-        on_attach = on_attach,
+        on_attach = function(client, bufnr)
+          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentRangeFormattingProvider = false
+          on_attach(client, bufnr)
+        end,
         settings = {
           tsserver_file_preferences = {
             includeInlayParameterNameHints = 'all',
@@ -569,6 +570,7 @@ require('lazy').setup {
         sh = { 'shellcheck' },
         rust = { 'clippy' },
         php = { 'phpcs' },
+        go = { 'golangci-lint' },
       }
 
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
@@ -627,7 +629,7 @@ require('lazy').setup {
         rust = { 'rustfmt' },
         python = function(bufnr)
           if require('conform').get_formatter_info('ruff_format', bufnr).available then
-            return { 'ruff_format' }
+            return { 'ruff_fix', 'ruff_format', 'ruff_organize_imports' }
           else
             return { 'isort', 'black' }
           end
@@ -707,7 +709,7 @@ require('lazy').setup {
       completion = {
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        accept = { auto_brackets = { enabled = true } },
+        -- accept = { auto_brackets = { enabled = true } },
         documentation = { auto_show = false, auto_show_delay_ms = 500 },
         list = { selection = { preselect = false, auto_insert = true } },
       },
@@ -741,7 +743,7 @@ require('lazy').setup {
           ['<Down>'] = { 'select_next', 'fallback' },
         },
         completion = {
-          list = { selection = { preselect = false } },
+          list = { selection = { preselect = false, auto_insert = true } },
           menu = {
             auto_show = function(ctx)
               return vim.fn.getcmdtype() == ':'
