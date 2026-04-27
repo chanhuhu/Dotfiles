@@ -9,6 +9,7 @@
 [color]
   ui = true
 [core]
+  pager = delta
 	autocrlf = input
   safecrlf = true
 [diff]
@@ -16,7 +17,7 @@
   compactionHeuristic = true
 [merge]
 	tool = nvimdiff
-  conflictstyle = diff3
+  conflictstyle = zdiff3
 [alias]
   c = commit
   co = checkout
@@ -41,3 +42,8 @@
 	cmd = nvim -d \"$LOCAL\" \"$MERGED\" \"$BASE\" \"$REMOTE\" -c \"wincmd w\" -c \"wincmd J\"
 [commit]
 	gpgsign = true
+[interactive]
+    diffFilter = delta --color-only
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
