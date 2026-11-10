@@ -1,3 +1,5 @@
+-- Enable faster startup by caching compiled Lua modules
+vim.loader.enable()
 -- set leader key
 vim.keymap.set('n', '<Space>', '<Nop>', { silent = true })
 vim.g.mapleader = ' '
@@ -6,7 +8,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.ruler = true
 
--- vim.opt.termguicolors = true
+vim.opt.termguicolors = true
 
 -- never ever folding
 vim.opt.foldenable = false
@@ -75,6 +77,15 @@ vim.keymap.set('n', '<leader><leader>', '<C-^>')
 vim.keymap.set('n', '<leader>n', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
+vim.diagnostic.config {
+  update_in_insert = false,
+  severity_sort = true,
+  float = { border = 'none', source = 'if_many' },
+  underline = { severity = { min = vim.diagnostic.severity.WARN } },
+  virtual_text = true,
+  virtual_lines = false,
+}
+
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- quick-open
@@ -127,6 +138,23 @@ vim.keymap.set('n', '<M-n>', '<cmd>cnext<CR>')
 
 -- Navigate to Previous Entry
 vim.keymap.set('n', '<M-p>', '<cmd>cprev<CR>')
+
+vim.api.nvim_create_user_command('LspInfo', 'checkhealth vim.lsp', {
+  desc = 'Show LSP Info',
+})
+
+vim.api.nvim_create_user_command('LspLog', function(_)
+  local state_path = vim.fn.stdpath 'state'
+  local log_path = vim.fs.joinpath(state_path, 'lsp.log')
+
+  vim.cmd(string.format('edit %s', log_path))
+end, {
+  desc = 'Show LSP log',
+})
+
+vim.api.nvim_create_user_command('LspRestart', 'lsp restart', {
+  desc = 'Restart LSP',
+})
 
 -- plugin manager
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -302,26 +330,6 @@ require('lazy').setup {
       -- Setup language servers.
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
-      vim.diagnostic.config {
-        severity_sort = true,
-        float = { border = 'none', source = 'if_many' },
-        underline = { severity = vim.diagnostic.severity.ERROR },
-        signs = {},
-        virtual_text = {
-          source = 'if_many',
-          spacing = 2,
-          format = function(diagnostic)
-            local diagnostic_message = {
-              [vim.diagnostic.severity.ERROR] = diagnostic.message,
-              [vim.diagnostic.severity.WARN] = diagnostic.message,
-              [vim.diagnostic.severity.INFO] = diagnostic.message,
-              [vim.diagnostic.severity.HINT] = diagnostic.message,
-            }
-            return diagnostic_message[diagnostic.severity]
-          end,
-        },
-      }
-
       local servers = {
         -- clangd = {},
         gopls = {
@@ -398,23 +406,20 @@ require('lazy').setup {
         },
         taplo = {},
 
-        -- tsgo = {
+        -- tsc = {
+        --   -- explicitly add default filetypes, so that we can extend
+        --   -- them in related extras
+        --   filetypes = {
+        --     'javascript',
+        --     'javascriptreact',
+        --     'javascript.jsx',
+        --     'typescript',
+        --     'typescriptreact',
+        --     'typescript.tsx',
+        --   },
+        --   ---@type lspconfig.settings.tsc
         --   settings = {
-        --     typescript = {
-        --       inlayHints = {
-        --         enumMemberValues = { enabled = true },
-        --         functionLikeReturnTypes = { enabled = false },
-        --         parameterNames = {
-        --           enabled = 'literals',
-        --           suppressWhenArgumentMatchesName = true,
-        --         },
-        --         parameterTypes = { enabled = true },
-        --         propertyDeclarationTypes = { enabled = true },
-        --         variableTypes = { enabled = false },
-        --       },
-        --     },
-        --
-        --     javascript = {
+        --     ['js/ts'] = {
         --       inlayHints = {
         --         enumMemberValues = { enabled = true },
         --         functionLikeReturnTypes = { enabled = false },
@@ -429,37 +434,7 @@ require('lazy').setup {
         --     },
         --   },
         -- },
-        -- ts_ls = {
-        --   settings = {
-        --     typescript = {
-        --       inlayHints = {
-        --         includeInlayEnumMemberValueHints = true,
-        --         includeInlayFunctionLikeReturnTypeHints = true,
-        --         includeInlayFunctionParameterTypeHints = true,
-        --         includeInlayParameterNameHints = 'literal',
-        --         includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        --         includeInlayPropertyDeclarationTypeHints = true,
-        --         includeInlayVariableTypeHints = false,
-        --         includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-        --       },
-        --     },
-        --     javascript = {
-        --       inlayHints = {
-        --         includeInlayEnumMemberValueHints = true,
-        --         includeInlayFunctionLikeReturnTypeHints = true,
-        --         includeInlayFunctionParameterTypeHints = true,
-        --         includeInlayParameterNameHints = 'literal',
-        --         includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        --         includeInlayPropertyDeclarationTypeHints = true,
-        --         includeInlayVariableTypeHints = false,
-        --         includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-        --       },
-        --     },
-        --     completion = {
-        --       completeFunctionCalls = true,
-        --     },
-        --   },
-        -- },
+
         -- biome = {},
         tailwindcss = {
           settings = {
@@ -546,6 +521,7 @@ require('lazy').setup {
         'goimports',
         'gofumpt',
         'golangci-lint',
+        'uv',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -633,7 +609,13 @@ require('lazy').setup {
     keys = {
       {
         '<leader>f',
-        function()
+        function(bufnr)
+          local buf = (type(bufnr) == 'number') and bufnr or vim.api.nvim_get_current_buf()
+          local bufname = vim.api.nvim_buf_get_name(buf)
+          if bufname:match '%.bash_profile$' then
+            return
+          end
+
           require('conform').format {
             async = false,
             lsp_format = 'fallback',
@@ -802,6 +784,11 @@ require('lazy').setup {
       ---@param buf integer
       ---@param language string
       local function treesitter_try_attach(buf, language)
+        -- Check if the buffer is valid (might not be after install completes)
+        if not vim.api.nvim_buf_is_valid(buf) then
+          return
+        end
+
         -- check if parser exists and load it
         if not vim.treesitter.language.add(language) then
           return

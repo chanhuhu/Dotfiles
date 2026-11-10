@@ -42,4 +42,4 @@ fi
 
 # running window manger
 sxhkd &
-exec bspwm
+ exec bspwm

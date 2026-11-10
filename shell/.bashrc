@@ -21,3 +21,7 @@ BASE16_SHELL="$HOME/.config/base16-shell/"
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 eval "$(fnm env --use-on-cd)"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/aygon/.local/bin:$PATH"

@@ -30,6 +30,10 @@ export FZF_DEFAULT_OPTS="--height 50%"
 
 export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 
+# export GEMINI_SANDBOX=docker
+# export SANDBOX_SET_UID_GID=false
+# export SANDBOX_FLAGS="--user root --env HOME=/home/$USER"
+
 # Less Colors for Man Pages
 man() {
     # mb = begin blinking
@@ -80,3 +84,7 @@ $HOME/.local/bin:\
 # ~/.bash_profile
 #
 [[ -f ~/.bashrc ]] && . ~/.bashrc
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/aygon/.local/bin:$PATH"

@@ -1,11 +1,13 @@
 #!/bin/sh
 
 sxhkd &
-# blueman-applet &
+blueman-applet &
 ulauncher --hide-window --no-window-shadow &
 # nitrogen --restore &
+feh --randomize --bg-scale ~/Pictures/wallpapers/* &
 nmgui &
 pactl load-module module-switch-on-connect &
+easyeffects --service-mode --hide-window &
 
 [ -x ~/.config/polybar/launch.sh ] && ~/.config/polybar/launch.sh &
 

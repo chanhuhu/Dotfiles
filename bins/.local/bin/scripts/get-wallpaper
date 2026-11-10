@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# 1. Fetch the URL and force 1080p resolution
+urlpath=$(
+  curl -s "https://www.bing.com/HPImageArchive.aspx?format=rss&idx=0&n=1&mkt=en-US" |
+    xmllint --xpath "/rss/channel/item/link/text()" - |
+    sed 's/1366x768/1920x1080/g'
+)
+
+# 2. Generate a dynamic filename
+save_dir="$HOME/Pictures/wallpapers"
+filename="bing_$(date +%Y-%m-%d).jpg"
+img_path="$save_dir/$filename"
+
+mkdir -p "$save_dir"
+
+# 3. Check if file already exists; if not, download it
+if [ ! -f "$img_path" ]; then
+  echo "Downloading new wallpaper: $filename"
+  curl -s "https://www.bing.com$urlpath" -o "$img_path"
+else
+  echo "Wallpaper for today already exists. Skipping download."
+fi
+
+# 4. Set the wallpaper with feh
+if [ -f "$img_path" ]; then
+  feh --bg-fill "$img_path"
+fi
