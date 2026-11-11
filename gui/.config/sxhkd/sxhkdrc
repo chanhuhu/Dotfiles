@@ -4,7 +4,7 @@
 
 # terminal emulator
 super + a
-  kitty
+  ghostty
 
 # program launcher
 super + x
